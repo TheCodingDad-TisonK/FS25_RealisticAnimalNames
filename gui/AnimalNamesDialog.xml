@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8" standalone="no" ?>
+<GUI>
+    <GuiElement type="screenElement">
+        <GuiElement type="dialogElement" name="AnimalNamesDialog" profile="dialogProfile">
+            
+            <!-- Background overlay -->
+            <GuiElement type="overlayElement" profile="backgroundOverlay" />
+            
+            <!-- Main dialog box -->
+            <GuiElement type="boxLayoutElement" name="mainBox" profile="dialogBox">
+                
+                <!-- Title Bar -->
+                <GuiElement type="boxLayoutElement" profile="dialogTitleBar">
+                    <GuiElement type="textElement" profile="dialogTitle" text="$l10n_ran_ui_title" />
+                </GuiElement>
+                
+                <!-- Content Area -->
+                <GuiElement type="boxLayoutElement" profile="dialogContent" layoutDirection="vertical">
+                    
+                    <!-- Name Input Section -->
+                    <GuiElement type="boxLayoutElement" profile="settingRow" layoutDirection="vertical">
+                        <GuiElement type="textElement" profile="settingLabel" text="$l10n_ran_ui_nameLabel" />
+                        <GuiElement type="textInputElement" name="nameInput" profile="textInput" 
+                                   placeholder="$l10n_ran_ui_placeholder" maxLength="30" />
+                    </GuiElement>
+                    
+                    <!-- Spacer -->
+                    <GuiElement type="emptyElement" profile="verticalSpacer" />
+                    
+                    <!-- Button Row -->
+                    <GuiElement type="boxLayoutElement" profile="buttonRow" layoutDirection="horizontal">
+                        <GuiElement type="buttonElement" profile="buttonOK" text="$l10n_ran_button_apply" 
+                                   onClick="onClickApply" />
+                        <GuiElement type="buttonElement" profile="buttonCancel" text="$l10n_ran_button_reset" 
+                                   onClick="onClickReset" />
+                        <GuiElement type="buttonElement" profile="buttonCancel" text="$l10n_ran_button_cancel" 
+                                   onClick="onClickCancel" />
+                    </GuiElement>
+                    
+                </GuiElement>
+                
+            </GuiElement>
+            
+        </GuiElement>
+    </GuiElement>
+</GUI>

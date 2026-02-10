@@ -1,8 +1,7 @@
+<?xml version="1.0" encoding="utf-8" standalone="no" ?>
 <modDesc descVersion="92">
     <author>YourName</author>
-    <version>1.0.0.0</version>
-    <modName>FS25_RealisticAnimalNames</modName>
-
+    <version>2.0.0.0</version>
     <title>
         <en>Realistic Animal Names</en>
         <de>Realistische Tiernamen</de>
@@ -17,70 +16,127 @@
     </title>
 
     <description>
-        <en>Add custom names to your animals with floating tags and editable settings.</en>
-        <de>Fügt benutzerdefinierte Namen für Ihre Tiere mit schwebenden Tags und einstellbaren Optionen hinzu.</de>
-        <fr>Ajoute des noms personnalisés à vos animaux avec des étiquettes flottantes et des paramètres éditables.</fr>
-        <pl>Dodaje niestandardowe nazwy dla zwierząt z unoszącymi się etykietami i konfigurowalnymi ustawieniami.</pl>
-        <es>Agrega nombres personalizados a tus animales con etiquetas flotantes y configuraciones editables.</es>
-        <it>Aggiunge nomi personalizzati agli animali con tag fluttuanti e impostazioni modificabili.</it>
-        <cz>Přidává vlastní jména pro zvířata se vznášejícími štítky a nastavitelné možnosti.</cz>
-        <br>Adiciona nomes personalizados aos seus animais com etiquetas flutuantes e configurações editáveis.</br>
-        <uk>Додає власні імена вашим тваринам із плаваючими тегами та редагованими налаштуваннями.</uk>
-        <ru>Добавляет кастомные имена вашим животным с плавающими метками и редактируемыми настройками.</ru>
+        <en><![CDATA[Add custom names to your animals with floating name tags. Features include:
+• Custom name input for each animal
+• Floating name tags above animals
+• Toggle visibility in settings
+• Per-savegame storage
+• Keybind support (default: K)
+• MP compatible]]></en>
+        <de><![CDATA[Fügen Sie Ihren Tieren benutzerdefinierte Namen mit schwebenden Namensschildern hinzu.]]></de>
+        <fr><![CDATA[Ajoutez des noms personnalisés à vos animaux avec des étiquettes flottantes.]]></fr>
     </description>
 
     <iconFilename>icon.dds</iconFilename>
-
     <multiplayer supported="true"/>
-    <multiplayer recommended="true"/>
 
+    <!-- Settings -->
+    <settings>
+        <setting name="showNames" title="ran_setting_showNames" type="bool" default="true" />
+        <setting name="nameDistance" title="ran_setting_nameDistance" type="float" default="15" min="5" max="50" />
+        <setting name="nameHeight" title="ran_setting_nameHeight" type="float" default="1.8" min="0.5" max="3.0" />
+        <setting name="fontSize" title="ran_setting_fontSize" type="float" default="0.018" min="0.010" max="0.030" />
+    </settings>
+
+    <!-- Input Actions -->
+    <actions>
+        <action name="RAN_OPEN_UI" category="VEHICLE" axisType="HALF" />
+    </actions>
+
+    <inputBinding>
+        <actionBinding action="RAN_OPEN_UI">
+            <binding device="KB_MOUSE_DEFAULT" input="KEY_k" />
+        </actionBinding>
+    </inputBinding>
+
+    <!-- Localization -->
     <l10n>
-        <text name="ran_show_names">
+        <!-- Settings -->
+        <text name="ran_setting_showNames">
             <en>Show Animal Names</en>
             <de>Tiernamen anzeigen</de>
             <fr>Afficher les noms des animaux</fr>
-            <pl>Pokaż nazwy zwierząt</pl>
-            <es>Mostrar nombres de animales</es>
-            <it>Mostra i nomi degli animali</it>
-            <cz>Zobrazit jména zvířat</cz>
-            <br>Mostrar Nomes de Animais</br>
-            <uk>Показати імена тварин</uk>
-            <ru>Показать имена животных</ru>
+        </text>
+        <text name="ran_setting_nameDistance">
+            <en>Name Display Distance</en>
+            <de>Namensschildabstand</de>
+            <fr>Distance d'affichage des noms</fr>
+        </text>
+        <text name="ran_setting_nameHeight">
+            <en>Name Height Above Animal</en>
+            <de>Namensschildhöhe über dem Tier</de>
+            <fr>Hauteur du nom au-dessus de l'animal</fr>
+        </text>
+        <text name="ran_setting_fontSize">
+            <en>Name Font Size</en>
+            <de>Schriftgröße der Namen</de>
+            <fr>Taille de la police des noms</fr>
         </text>
 
-        <text name="ran_apply">
+        <!-- UI Elements -->
+        <text name="ran_ui_title">
+            <en>Animal Name Manager</en>
+            <de>Tiernamen-Manager</de>
+            <fr>Gestionnaire de noms d'animaux</fr>
+        </text>
+        <text name="ran_ui_nameLabel">
+            <en>Animal Name:</en>
+            <de>Tiername:</de>
+            <fr>Nom de l'animal :</fr>
+        </text>
+        <text name="ran_ui_placeholder">
+            <en>Enter name...</en>
+            <de>Name eingeben...</de>
+            <fr>Entrez le nom...</fr>
+        </text>
+        <text name="ran_button_apply">
             <en>Apply</en>
             <de>Anwenden</de>
             <fr>Appliquer</fr>
-            <pl>Zastosuj</pl>
-            <es>Aplicar</es>
-            <it>Applica</it>
-            <cz>Použít</cz>
-            <br>Aplicar</br>
-            <uk>Застосувати</uk>
-            <ru>Применить</ru>
         </text>
-
-        <text name="ran_reset">
+        <text name="ran_button_reset">
             <en>Reset</en>
             <de>Zurücksetzen</de>
             <fr>Réinitialiser</fr>
-            <pl>Resetuj</pl>
-            <es>Restablecer</es>
-            <it>Reimposta</it>
-            <cz>Resetovat</cz>
-            <br>Redefinir</br>
-            <uk>Скинути</uk>
-            <ru>Сброс</ru>
+        </text>
+        <text name="ran_button_cancel">
+            <en>Cancel</en>
+            <de>Abbrechen</de>
+            <fr>Annuler</fr>
+        </text>
+
+        <!-- Notifications -->
+        <text name="ran_notification_loaded">
+            <en>Realistic Animal Names loaded! Press K near an animal to rename it.</en>
+            <de>Realistische Tiernamen geladen! Drücken Sie K in der Nähe eines Tieres, um es umzubenennen.</de>
+            <fr>Noms d'Animaux Réalistes chargé ! Appuyez sur K près d'un animal pour le renommer.</fr>
+        </text>
+        <text name="ran_notification_noAnimal">
+            <en>No animal nearby. Get closer to an animal.</en>
+            <de>Kein Tier in der Nähe. Gehen Sie näher an ein Tier heran.</de>
+            <fr>Aucun animal à proximité. Rapprochez-vous d'un animal.</fr>
+        </text>
+        <text name="ran_notification_nameSet">
+            <en>Animal name set to: %s</en>
+            <de>Tiername gesetzt auf: %s</de>
+            <fr>Nom de l'animal défini sur : %s</fr>
+        </text>
+        <text name="ran_notification_nameReset">
+            <en>Animal name reset</en>
+            <de>Tiername zurückgesetzt</de>
+            <fr>Nom de l'animal réinitialisé</fr>
+        </text>
+
+        <!-- Input -->
+        <text name="input_RAN_OPEN_UI">
+            <en>Open Animal Naming UI</en>
+            <de>Tiernamen-UI öffnen</de>
+            <fr>Ouvrir l'interface de nommage</fr>
         </text>
     </l10n>
 
+    <!-- Source Files -->
     <extraSourceFiles>
-        <sourceFile filename="RealisticAnimalNames.lua"/>
-        <sourceFile filename="RealisticAnimalNamesGui.lua"/>
+        <sourceFile filename="src/RealisticAnimalNames.lua" />
     </extraSourceFiles>
-
-    <gui>
-        <filename name="RealisticAnimalNamesScreen" filename="RealisticAnimalNamesGui.xml"/>
-    </gui>
 </modDesc>
