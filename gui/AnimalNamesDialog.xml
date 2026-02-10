@@ -1,40 +1,76 @@
 <?xml version="1.0" encoding="utf-8" standalone="no" ?>
 <GUI>
+    <templates>
+        <!-- Custom templates for animal names dialog -->
+        <template name="animalDialogBox">
+            <size relative="false" width="400" height="200" />
+            <position relative="false" x="0" y="0" />
+            <backgroundColor r="0.1" g="0.1" b="0.1" a="0.95" />
+            <borderColor r="0.3" g="0.6" b="0.3" a="1.0" />
+            <borderWidth>2</borderWidth>
+        </template>
+        
+        <template name="animalDialogTitle">
+            <size relative="false" width="100%%" height="30" />
+            <position relative="false" x="0" y="0" />
+            <textColor r="1" g="1" b="1" a="1" />
+            <backgroundColor r="0.2" g="0.4" b="0.2" a="1.0" />
+            <fontSize>18</fontSize>
+            <alignment>center</alignment>
+            <verticalAlignment>center</verticalAlignment>
+        </template>
+        
+        <template name="animalNameInput">
+            <size relative="false" width="350" height="35" />
+            <backgroundColor r="0.15" g="0.15" b="0.15" a="1.0" />
+            <textColor r="1" g="1" b="1" a="1" />
+            <fontSize>16</fontSize>
+            <maxCharacters>30</maxCharacters>
+        </template>
+    </templates>
+    
     <GuiElement type="screenElement">
-        <GuiElement type="dialogElement" name="AnimalNamesDialog" profile="dialogProfile">
+        <GuiElement type="dialogElement" name="AnimalNamesDialog" template="dialog" 
+                   closeOnClick="false" closeOnEsc="true">
             
             <!-- Background overlay -->
-            <GuiElement type="overlayElement" profile="backgroundOverlay" />
+            <GuiElement type="overlayElement" name="overlay" template="overlay" />
             
             <!-- Main dialog box -->
-            <GuiElement type="boxLayoutElement" name="mainBox" profile="dialogBox">
+            <GuiElement type="boxLayoutElement" name="mainBox" template="animalDialogBox"
+                       layoutDirection="vertical">
                 
                 <!-- Title Bar -->
-                <GuiElement type="boxLayoutElement" profile="dialogTitleBar">
-                    <GuiElement type="textElement" profile="dialogTitle" text="$l10n_ran_ui_title" />
+                <GuiElement type="boxLayoutElement" name="titleBar" template="animalDialogTitle">
+                    <GuiElement type="textElement" name="titleText" text="$l10n_ran_ui_title" />
                 </GuiElement>
                 
                 <!-- Content Area -->
-                <GuiElement type="boxLayoutElement" profile="dialogContent" layoutDirection="vertical">
+                <GuiElement type="boxLayoutElement" name="contentArea" layoutDirection="vertical"
+                          padding="10">
                     
                     <!-- Name Input Section -->
-                    <GuiElement type="boxLayoutElement" profile="settingRow" layoutDirection="vertical">
-                        <GuiElement type="textElement" profile="settingLabel" text="$l10n_ran_ui_nameLabel" />
-                        <GuiElement type="textInputElement" name="nameInput" profile="textInput" 
-                                   placeholder="$l10n_ran_ui_placeholder" maxLength="30" />
+                    <GuiElement type="flowLayoutElement" name="inputSection" layoutDirection="vertical"
+                              margin="0 0 15 0">
+                        <GuiElement type="textElement" name="nameLabel" text="$l10n_ran_ui_nameLabel"
+                                  template="dialogLabel" margin="0 0 5 0" />
+                        <GuiElement type="textInputElement" name="nameInput" template="animalNameInput"
+                                  placeholder="$l10n_ran_ui_placeholder" />
                     </GuiElement>
                     
                     <!-- Spacer -->
-                    <GuiElement type="emptyElement" profile="verticalSpacer" />
+                    <GuiElement type="emptyElement" name="spacer" 
+                              template="verticalSpacer" />
                     
                     <!-- Button Row -->
-                    <GuiElement type="boxLayoutElement" profile="buttonRow" layoutDirection="horizontal">
-                        <GuiElement type="buttonElement" profile="buttonOK" text="$l10n_ran_button_apply" 
-                                   onClick="onClickApply" />
-                        <GuiElement type="buttonElement" profile="buttonCancel" text="$l10n_ran_button_reset" 
-                                   onClick="onClickReset" />
-                        <GuiElement type="buttonElement" profile="buttonCancel" text="$l10n_ran_button_cancel" 
-                                   onClick="onClickCancel" />
+                    <GuiElement type="boxLayoutElement" name="buttonRow" layoutDirection="horizontal"
+                              template="dialogButtonRow">
+                        <GuiElement type="buttonElement" name="applyButton" 
+                                  template="dialogButtonPrimary" text="$l10n_ran_button_apply" />
+                        <GuiElement type="buttonElement" name="resetButton" 
+                                  template="dialogButton" text="$l10n_ran_button_reset" />
+                        <GuiElement type="buttonElement" name="cancelButton" 
+                                  template="dialogButton" text="$l10n_ran_button_cancel" />
                     </GuiElement>
                     
                 </GuiElement>

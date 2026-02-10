@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8" standalone="no" ?>
-<modDesc descVersion="92">
+<modDesc descVersion="105">
     <author>YourName</author>
     <version>2.0.0.0</version>
     <title>
@@ -135,8 +135,14 @@
         </text>
     </l10n>
 
-    <!-- Source Files -->
+   <!-- Source Files -->
     <extraSourceFiles>
         <sourceFile filename="src/RealisticAnimalNames.lua" />
+        <sourceFile filename="gui/AnimalNamesDialog.lua" />
     </extraSourceFiles>
+    
+    <!-- GUI Definitions -->
+    <extraGUIs>
+        <gui filename="gui/AnimalNamesDialog.xml" />
+    </extraGUIs>
 </modDesc>
