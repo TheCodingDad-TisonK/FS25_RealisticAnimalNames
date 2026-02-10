@@ -1,0 +1,5 @@
+<inputBinding descVersion="92">
+    <input actionName="RAN_OPEN_UI" category="MOD" device="keyboard" displayName="Open Animal UI">
+        <inputKey device="keyboard" key="K"/>
+    </input>
+</inputBinding>

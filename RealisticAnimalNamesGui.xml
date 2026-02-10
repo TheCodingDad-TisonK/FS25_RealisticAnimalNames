@@ -1,0 +1,14 @@
+<Gui xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="FS22_GUI.xsd">
+    <Screen name="RealisticAnimalNamesScreen" controller="RealisticAnimalNamesGui" size="0.6 0.6" modal="true">
+        <Background name="background" position="0 0" size="1 1" color="0 0 0 0.7"/>
+        <Text name="title" position="0.5 0.9" size="1 0.05" text="Realistic Animal Names" alignment="center"/>
+
+        <Checkbox name="toggleShowNames" position="0.05 0.8" size="0.4 0.05" text="$l10n_ran_show_names"/>
+
+        <Text name="nameLabel" position="0.05 0.7" size="0.3 0.03" text="Name:"/>
+        <Input name="animalNameInput" position="0.05 0.65" size="0.5 0.05" placeholder="Enter new name"/>
+
+        <Button name="applyButton" position="0.05 0.55" size="0.2 0.05" text="$l10n_ran_apply"/>
+        <Button name="resetButton" position="0.3 0.55" size="0.2 0.05" text="$l10n_ran_reset"/>
+    </Screen>
+</Gui>

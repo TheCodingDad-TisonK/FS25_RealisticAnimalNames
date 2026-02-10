@@ -1,0 +1,86 @@
+<modDesc descVersion="92">
+    <author>YourName</author>
+    <version>1.0.0.0</version>
+    <modName>FS25_RealisticAnimalNames</modName>
+
+    <title>
+        <en>Realistic Animal Names</en>
+        <de>Realistische Tiernamen</de>
+        <fr>Noms d'Animaux Réalistes</fr>
+        <pl>Realistyczne Nazwy Zwierząt</pl>
+        <es>Nombres Realistas para Animales</es>
+        <it>Nomi Animali Realistici</it>
+        <cz>Realistická Jména Zvířat</cz>
+        <br>Nomes Realistas de Animais</br>
+        <uk>Реалістичні Імена Тварин</uk>
+        <ru>Реалистичные Имена Животных</ru>
+    </title>
+
+    <description>
+        <en>Add custom names to your animals with floating tags and editable settings.</en>
+        <de>Fügt benutzerdefinierte Namen für Ihre Tiere mit schwebenden Tags und einstellbaren Optionen hinzu.</de>
+        <fr>Ajoute des noms personnalisés à vos animaux avec des étiquettes flottantes et des paramètres éditables.</fr>
+        <pl>Dodaje niestandardowe nazwy dla zwierząt z unoszącymi się etykietami i konfigurowalnymi ustawieniami.</pl>
+        <es>Agrega nombres personalizados a tus animales con etiquetas flotantes y configuraciones editables.</es>
+        <it>Aggiunge nomi personalizzati agli animali con tag fluttuanti e impostazioni modificabili.</it>
+        <cz>Přidává vlastní jména pro zvířata se vznášejícími štítky a nastavitelné možnosti.</cz>
+        <br>Adiciona nomes personalizados aos seus animais com etiquetas flutuantes e configurações editáveis.</br>
+        <uk>Додає власні імена вашим тваринам із плаваючими тегами та редагованими налаштуваннями.</uk>
+        <ru>Добавляет кастомные имена вашим животным с плавающими метками и редактируемыми настройками.</ru>
+    </description>
+
+    <iconFilename>icon.dds</iconFilename>
+
+    <multiplayer supported="true"/>
+    <multiplayer recommended="true"/>
+
+    <l10n>
+        <text name="ran_show_names">
+            <en>Show Animal Names</en>
+            <de>Tiernamen anzeigen</de>
+            <fr>Afficher les noms des animaux</fr>
+            <pl>Pokaż nazwy zwierząt</pl>
+            <es>Mostrar nombres de animales</es>
+            <it>Mostra i nomi degli animali</it>
+            <cz>Zobrazit jména zvířat</cz>
+            <br>Mostrar Nomes de Animais</br>
+            <uk>Показати імена тварин</uk>
+            <ru>Показать имена животных</ru>
+        </text>
+
+        <text name="ran_apply">
+            <en>Apply</en>
+            <de>Anwenden</de>
+            <fr>Appliquer</fr>
+            <pl>Zastosuj</pl>
+            <es>Aplicar</es>
+            <it>Applica</it>
+            <cz>Použít</cz>
+            <br>Aplicar</br>
+            <uk>Застосувати</uk>
+            <ru>Применить</ru>
+        </text>
+
+        <text name="ran_reset">
+            <en>Reset</en>
+            <de>Zurücksetzen</de>
+            <fr>Réinitialiser</fr>
+            <pl>Resetuj</pl>
+            <es>Restablecer</es>
+            <it>Reimposta</it>
+            <cz>Resetovat</cz>
+            <br>Redefinir</br>
+            <uk>Скинути</uk>
+            <ru>Сброс</ru>
+        </text>
+    </l10n>
+
+    <extraSourceFiles>
+        <sourceFile filename="RealisticAnimalNames.lua"/>
+        <sourceFile filename="RealisticAnimalNamesGui.lua"/>
+    </extraSourceFiles>
+
+    <gui>
+        <filename name="RealisticAnimalNamesScreen" filename="RealisticAnimalNamesGui.xml"/>
+    </gui>
+</modDesc>
