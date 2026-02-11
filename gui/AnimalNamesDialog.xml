@@ -1,76 +1,88 @@
 <?xml version="1.0" encoding="utf-8" standalone="no" ?>
 <GUI>
-    <templates>
-        <!-- Custom templates for animal names dialog -->
-        <template name="animalDialogBox">
-            <size relative="false" width="400" height="200" />
-            <position relative="false" x="0" y="0" />
-            <backgroundColor r="0.1" g="0.1" b="0.1" a="0.95" />
-            <borderColor r="0.3" g="0.6" b="0.3" a="1.0" />
-            <borderWidth>2</borderWidth>
-        </template>
-        
-        <template name="animalDialogTitle">
-            <size relative="false" width="100%%" height="30" />
-            <position relative="false" x="0" y="0" />
-            <textColor r="1" g="1" b="1" a="1" />
-            <backgroundColor r="0.2" g="0.4" b="0.2" a="1.0" />
-            <fontSize>18</fontSize>
-            <alignment>center</alignment>
-            <verticalAlignment>center</verticalAlignment>
-        </template>
-        
-        <template name="animalNameInput">
-            <size relative="false" width="350" height="35" />
-            <backgroundColor r="0.15" g="0.15" b="0.15" a="1.0" />
-            <textColor r="1" g="1" b="1" a="1" />
-            <fontSize>16</fontSize>
-            <maxCharacters>30</maxCharacters>
-        </template>
-    </templates>
+    <!-- GUI Definition for Animal Names Dialog -->
     
     <GuiElement type="screenElement">
-        <GuiElement type="dialogElement" name="AnimalNamesDialog" template="dialog" 
-                   closeOnClick="false" closeOnEsc="true">
+        <GuiElement type="dialogElement" name="AnimalNamesDialog" 
+                   profile="dialogProfile" 
+                   closeOnClick="false" 
+                   closeOnEsc="true">
             
-            <!-- Background overlay -->
-            <GuiElement type="overlayElement" name="overlay" template="overlay" />
+            <!-- Background overlay (dims the screen) -->
+            <GuiElement type="overlayElement" name="overlay" 
+                       profile="ingameMenuDialogOverlay" />
             
             <!-- Main dialog box -->
-            <GuiElement type="boxLayoutElement" name="mainBox" template="animalDialogBox"
+            <GuiElement type="flowLayoutElement" name="mainBox" 
+                       profile="dialogBox"
                        layoutDirection="vertical">
                 
                 <!-- Title Bar -->
-                <GuiElement type="boxLayoutElement" name="titleBar" template="animalDialogTitle">
-                    <GuiElement type="textElement" name="titleText" text="$l10n_ran_ui_title" />
+                <GuiElement type="flowLayoutElement" name="titleBar" 
+                           profile="dialogBoxTitleBar"
+                           layoutDirection="vertical">
+                    <GuiElement type="textElement" name="titleText" 
+                               profile="dialogBoxTitle"
+                               text="$l10n_ran_ui_title" />
                 </GuiElement>
                 
                 <!-- Content Area -->
-                <GuiElement type="boxLayoutElement" name="contentArea" layoutDirection="vertical"
-                          padding="10">
+                <GuiElement type="flowLayoutElement" name="contentArea" 
+                           profile="dialogBoxContent"
+                           layoutDirection="vertical">
                     
                     <!-- Name Input Section -->
-                    <GuiElement type="flowLayoutElement" name="inputSection" layoutDirection="vertical"
-                              margin="0 0 15 0">
-                        <GuiElement type="textElement" name="nameLabel" text="$l10n_ran_ui_nameLabel"
-                                  template="dialogLabel" margin="0 0 5 0" />
-                        <GuiElement type="textInputElement" name="nameInput" template="animalNameInput"
-                                  placeholder="$l10n_ran_ui_placeholder" />
+                    <GuiElement type="flowLayoutElement" name="inputSection" 
+                               layoutDirection="vertical"
+                               margin="0 0 0 15">
+                        
+                        <!-- Label -->
+                        <GuiElement type="textElement" name="nameLabel" 
+                                   profile="dialogLabel"
+                                   text="$l10n_ran_ui_nameLabel"
+                                   margin="0 0 0 5" />
+                        
+                        <!-- Text Input -->
+                        <GuiElement type="textInputElement" name="nameInput" 
+                                   profile="dialogTextInput"
+                                   placeholder="$l10n_ran_ui_placeholder"
+                                   maxCharacters="30">
+                            <size relative="false" width="400" height="40" />
+                        </GuiElement>
                     </GuiElement>
                     
                     <!-- Spacer -->
-                    <GuiElement type="emptyElement" name="spacer" 
-                              template="verticalSpacer" />
+                    <GuiElement type="emptyElement" name="spacer">
+                        <size relative="false" width="1" height="20" />
+                    </GuiElement>
                     
                     <!-- Button Row -->
-                    <GuiElement type="boxLayoutElement" name="buttonRow" layoutDirection="horizontal"
-                              template="dialogButtonRow">
+                    <GuiElement type="flowLayoutElement" name="buttonRow" 
+                               layoutDirection="horizontal"
+                               margin="0">
+                        
+                        <!-- Apply Button (Primary) -->
                         <GuiElement type="buttonElement" name="applyButton" 
-                                  template="dialogButtonPrimary" text="$l10n_ran_button_apply" />
+                                   profile="buttonPrimary"
+                                   text="$l10n_ran_button_apply">
+                            <size relative="false" width="120" height="40" />
+                        </GuiElement>
+                        
+                        <!-- Reset Button -->
                         <GuiElement type="buttonElement" name="resetButton" 
-                                  template="dialogButton" text="$l10n_ran_button_reset" />
+                                   profile="buttonSecondary"
+                                   text="$l10n_ran_button_reset">
+                            <size relative="false" width="120" height="40" />
+                            <position relative="false" x="10" y="0" />
+                        </GuiElement>
+                        
+                        <!-- Cancel Button -->
                         <GuiElement type="buttonElement" name="cancelButton" 
-                                  template="dialogButton" text="$l10n_ran_button_cancel" />
+                                   profile="buttonSecondary"
+                                   text="$l10n_ran_button_cancel">
+                            <size relative="false" width="120" height="40" />
+                            <position relative="false" x="10" y="0" />
+                        </GuiElement>
                     </GuiElement>
                     
                 </GuiElement>

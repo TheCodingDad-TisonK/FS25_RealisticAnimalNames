@@ -1,14 +1,12 @@
 -- ============================================================================
--- Realistic Animal Names for FS25 - ENHANCED VERSION
+-- Realistic Animal Names for FS25 - COMPLETE VERSION
 -- ============================================================================
 -- Version: 2.1.0.0
--- Author: YourName
+-- Author: TisonK
 -- Description: Add custom names to animals with floating name tags
 -- ============================================================================
 
 RealisticAnimalNames = {}
-g_realisticAnimalNames = nil
-
 local RealisticAnimalNames_mt = Class(RealisticAnimalNames)
 
 ---Initialize the mod
@@ -26,7 +24,6 @@ function RealisticAnimalNames.new(mission, modDirectory, modName, i18n, gui, inp
     -- Data storage
     self.animalNames = {}
     self.originalNames = {}
-    self.perSavegameSettings = {}
     
     -- Settings cache
     self.settings = {
@@ -43,8 +40,6 @@ function RealisticAnimalNames.new(mission, modDirectory, modName, i18n, gui, inp
     -- State
     self.isInitialized = false
     self.actionEventId = nil
-    self.lastSettingsCheck = 0
-    self.activeSavegame = nil
     self.isMultiplayer = false
 
     return self
@@ -56,131 +51,46 @@ function RealisticAnimalNames:onMissionLoaded(mission)
         -- Check if multiplayer
         self.isMultiplayer = mission:getIsMultiplayer()
         
-        -- Get current savegame ID
-        self.activeSavegame = self:getSavegameId()
-        
-        -- Load per-savegame settings
-        self:loadPerSavegameSettings()
-        
         -- Load saved animal names
         self:loadFromSavegame()
         
-        -- Only register input on client side
+        -- Only register input and UI on client side
         if mission:getIsClient() then
             self:registerInputActions()
             self:loadGUI()
             
-            -- Welcome notification (only for clients)
+            -- Welcome notification
             self:showNotification("ran_notification_loaded", FSBaseMission.INGAME_NOTIFICATION_INFO)
         end
         
         self.isInitialized = true
         
-        -- Register for settings changes
-        self:registerSettingsListener()
+        -- Load settings from game settings
+        self:loadSettingsFromGame()
     end
 end
 
----Register for settings changes
-function RealisticAnimalNames:registerSettingsListener()
-    if self.messageCenter then
-        self.messageCenter:subscribe(MessageType.SETTING_CHANGED, self.onSettingChanged, self)
-    end
-end
-
----Handle settings changes
-function RealisticAnimalNames:onSettingChanged(message)
-    local settingName = message.settingName
-    local value = message.value
-    
-    -- Update cached settings
-    if settingName == "showNames" then
-        self.settings.showNames = value
-    elseif settingName == "nameDistance" then
-        self.settings.nameDistance = value
-    elseif settingName == "nameHeight" then
-        self.settings.nameHeight = value
-    elseif settingName == "fontSize" then
-        self.settings.fontSize = value
-    end
-    
-    -- Save to per-savegame settings
-    self.perSavegameSettings[settingName] = value
-    self:savePerSavegameSettings()
-end
-
----Load per-savegame settings
-function RealisticAnimalNames:loadPerSavegameSettings()
-    local filename = self:getSavegamePath("settings.xml")
-    if not filename or not fileExists(filename) then
-        return
-    end
-    
-    local xmlFile = XMLFile.load("settingsXML", filename)
-    if not xmlFile then
-        return
-    end
-    
-    xmlFile:iterate("settings.setting", function(index, key)
-        local name = xmlFile:getValue(key .. "#name")
-        local value = xmlFile:getValue(key .. "#value")
-        if name and value ~= nil then
-            self.perSavegameSettings[name] = value
-            
-            -- Apply to current settings
-            if self.settings[name] ~= nil then
-                self.settings[name] = value
-            end
+---Load settings from game settings system
+function RealisticAnimalNames:loadSettingsFromGame()
+    if g_gameSettings then
+        local showNames = g_gameSettings:getValue("showNames")
+        local nameDistance = g_gameSettings:getValue("nameDistance")
+        local nameHeight = g_gameSettings:getValue("nameHeight")
+        local fontSize = g_gameSettings:getValue("fontSize")
+        
+        if showNames ~= nil then
+            self.settings.showNames = showNames
         end
-    end)
-    
-    xmlFile:delete()
-end
-
----Save per-savegame settings
-function RealisticAnimalNames:savePerSavegameSettings()
-    local filename = self:getSavegamePath("settings.xml")
-    if not filename then
-        return
-    end
-    
-    local xmlFile = XMLFile.create("settingsXML", filename, "settings")
-    if not xmlFile then
-        return
-    end
-    
-    local index = 0
-    for name, value in pairs(self.perSavegameSettings) do
-        local key = string.format("settings.setting(%d)", index)
-        xmlFile:setValue(key .. "#name", name)
-        xmlFile:setValue(key .. "#value", value)
-        index = index + 1
-    end
-    
-    xmlFile:save()
-    xmlFile:delete()
-end
-
----Get savegame ID
-function RealisticAnimalNames:getSavegameId()
-    if self.mission.missionInfo and self.mission.missionInfo.savegameDirectory then
-        local dir = self.mission.missionInfo.savegameDirectory
-        local id = string.match(dir, "savegame(%d+)")
-        return tonumber(id) or 0
-    end
-    return 0
-end
-
----Get savegame file path
-function RealisticAnimalNames:getSavegamePath(filename)
-    if self.mission.missionInfo and self.mission.missionInfo.savegameDirectory then
-        local path = self.mission.missionInfo.savegameDirectory .. "/"
-        if filename then
-            path = path .. filename
+        if nameDistance ~= nil then
+            self.settings.nameDistance = nameDistance
         end
-        return path
+        if nameHeight ~= nil then
+            self.settings.nameHeight = nameHeight
+        end
+        if fontSize ~= nil then
+            self.settings.fontSize = fontSize
+        end
     end
-    return nil
 end
 
 ---Register input actions for FS25
@@ -200,7 +110,6 @@ function RealisticAnimalNames:registerInputActions()
     if actionEventId then
         self.inputManager:setActionEventTextVisibility(actionEventId, false)
         self.inputManager:setActionEventTextPriority(actionEventId, GS_PRIO_HIGH)
-        self.inputManager:setActionEventActive(actionEventId, true)
     end
 end
 
@@ -209,11 +118,10 @@ function RealisticAnimalNames:loadGUI()
     local xmlFilename = self.modDirectory .. "gui/AnimalNamesDialog.xml"
     
     if fileExists(xmlFilename) then
-        self.dialog = g_gui:loadGui(
-            xmlFilename,
-            "AnimalNamesDialog",
-            AnimalNamesDialog.new(self)
-        )
+        -- Load the GUI using the proper FS25 API
+        self.gui:loadGui(xmlFilename, "AnimalNamesDialog", self)
+        
+        print("Realistic Animal Names: GUI loaded from " .. xmlFilename)
     else
         print("Error: GUI file not found: " .. xmlFilename)
     end
@@ -238,7 +146,7 @@ function RealisticAnimalNames:onOpenUIInput(_, inputValue)
     end
 end
 
----Find the closest animal to the camera with type filtering
+---Find the closest animal to the camera
 function RealisticAnimalNames:getClosestAnimal(maxDistance)
     if not self.mission.animalSystem then
         return nil
@@ -253,6 +161,7 @@ function RealisticAnimalNames:getClosestAnimal(maxDistance)
     local closestAnimal = nil
     local closestDistance = maxDistance
     
+    -- Iterate through all animal clusters
     for _, cluster in pairs(self.mission.animalSystem.clusters) do
         if cluster.animals then
             for _, animal in pairs(cluster.animals) do
@@ -272,252 +181,166 @@ function RealisticAnimalNames:getClosestAnimal(maxDistance)
     return closestAnimal
 end
 
----Validate if animal is valid for naming
+---Check if animal is valid for naming
 function RealisticAnimalNames:isValidAnimal(animal)
-    if not animal or not animal.nodeId then
-        return false
-    end
-    
-    if not entityExists(animal.nodeId) then
-        return false
-    end
-    
-    -- Check if animal is alive (not a carcass)
-    if animal.isDead then
-        return false
-    end
-    
-    return true
+    return animal ~= nil 
+        and animal.nodeId ~= nil 
+        and entityExists(animal.nodeId)
+        and animal.id ~= nil
 end
 
----Get list of all nearby animals
-function RealisticAnimalNames:getNearbyAnimals(maxDistance, limit)
-    local animals = {}
-    local camera = getCamera()
-    
-    if not camera or not self.mission.animalSystem then
-        return animals
+---Get unique animal ID
+function RealisticAnimalNames:getAnimalId(animal)
+    if not animal or not animal.id then
+        return nil
     end
-    
-    local camX, camY, camZ = getWorldTranslation(camera)
-    local count = 0
-    
-    for _, cluster in pairs(self.mission.animalSystem.clusters) do
-        if cluster.animals then
-            for _, animal in pairs(cluster.animals) do
-                if self:isValidAnimal(animal) then
-                    local x, y, z = getWorldTranslation(animal.nodeId)
-                    local distance = MathUtil.vector3Length(camX - x, camY - y, camZ - z)
-                    
-                    if distance <= maxDistance then
-                        table.insert(animals, {
-                            animal = animal,
-                            distance = distance
-                        })
-                        count = count + 1
-                        
-                        if limit and count >= limit then
-                            return animals
-                        end
-                    end
-                end
-            end
-        end
-    end
-    
-    -- Sort by distance
-    table.sort(animals, function(a, b)
-        return a.distance < b.distance
-    end)
-    
-    return animals
+    return tostring(animal.id)
 end
 
----Open the naming dialog for a specific animal
+---Open the naming dialog for an animal
 function RealisticAnimalNames:openDialogForAnimal(animal)
-    if not self.dialog then
-        self:loadGUI()
-        if not self.dialog then
-            print("Error: Could not load dialog")
-            return
-        end
+    if not animal then
+        return
     end
     
     self.currentAnimal = animal
+    local animalId = self:getAnimalId(animal)
+    local currentName = self.animalNames[animalId] or ""
     
-    local currentName = self.animalNames[animal.id] or ""
+    -- Get or create dialog
+    local dialog = self.gui:showDialog("AnimalNamesDialog")
     
-    self.dialog:setAnimal(animal, currentName)
-    g_gui:showDialog("AnimalNamesDialog")
+    if dialog and dialog.setAnimal then
+        dialog:setAnimal(animal, currentName)
+    end
 end
 
 ---Set an animal's name
 function RealisticAnimalNames:setAnimalName(animal, name)
-    if not animal or not animal.id then
+    if not animal then
         return false
     end
     
-    -- Validate name
-    name = self:validateAnimalName(name)
-    if not name then
+    local animalId = self:getAnimalId(animal)
+    if not animalId then
         return false
     end
     
-    -- Store original name if not already stored
-    if not self.originalNames[animal.id] then
-        self.originalNames[animal.id] = self.animalNames[animal.id] or ""
+    -- Validate and sanitize name
+    name = name and tostring(name):trim() or ""
+    
+    if name == "" then
+        -- Empty name = reset
+        return self:resetAnimalName(animal)
     end
     
-    -- Set new name
-    self.animalNames[animal.id] = name
-    
-    -- Show notification
-    self:showNotification("ran_notification_nameSet", FSBaseMission.INGAME_NOTIFICATION_OK, name)
-    
-    -- Save immediately
-    self:saveToSavegame()
-    
-    return true
-end
-
----Validate animal name
-function RealisticAnimalNames:validateAnimalName(name)
-    if not name or name == "" then
-        return nil  -- Empty name is valid (resets to default)
-    end
-    
-    -- Trim whitespace
-    name = string.gsub(name, "^%s*(.-)%s*$", "%1")
-    
-    -- Check length
-    if #name > 30 then
+    -- Limit name length
+    if string.len(name) > 30 then
         name = string.sub(name, 1, 30)
     end
     
-    -- Remove potentially harmful characters
-    name = string.gsub(name, "[<>\"&]", "")
+    -- Store the name
+    self.animalNames[animalId] = name
     
-    return name
+    -- Save to file
+    self:saveToSavegame()
+    
+    -- Show notification
+    local notificationText = string.format(self.i18n:getText("ran_notification_nameSet"), name)
+    g_currentMission:addIngameNotification(FSBaseMission.INGAME_NOTIFICATION_OK, notificationText)
+    
+    return true
 end
 
 ---Reset an animal's name
 function RealisticAnimalNames:resetAnimalName(animal)
-    if not animal or not animal.id then
+    if not animal then
         return false
     end
     
-    local originalName = self.originalNames[animal.id]
-    self.animalNames[animal.id] = originalName
+    local animalId = self:getAnimalId(animal)
+    if not animalId then
+        return false
+    end
     
-    self:showNotification("ran_notification_nameReset", FSBaseMission.INGAME_NOTIFICATION_OK)
+    -- Remove the name
+    self.animalNames[animalId] = nil
     
-    -- Save immediately
+    -- Save to file
     self:saveToSavegame()
+    
+    -- Show notification
+    self:showNotification("ran_notification_nameReset", FSBaseMission.INGAME_NOTIFICATION_OK)
     
     return true
 end
 
----Show notification
-function RealisticAnimalNames:showNotification(translationKey, notificationType, ...)
-    if not g_currentMission then
-        return
-    end
-    
-    local text = self.i18n:getText(translationKey)
-    if ... then
-        text = string.format(text, ...)
-    end
-    
-    g_currentMission:addIngameNotification(notificationType, text)
+---Show a localized notification
+function RealisticAnimalNames:showNotification(textKey, notificationType)
+    local text = self.i18n:getText(textKey)
+    g_currentMission:addIngameNotification(notificationType or FSBaseMission.INGAME_NOTIFICATION_INFO, text)
 end
 
----Draw floating names above animals
-function RealisticAnimalNames:draw()
-    if not self.settings.showNames then
-        return
+---Get savegame file path
+function RealisticAnimalNames:getSavegameFilePath()
+    if self.mission.missionInfo and self.mission.missionInfo.savegameDirectory then
+        return self.mission.missionInfo.savegameDirectory .. "/realisticAnimalNames.xml"
     end
-
-    if not self.mission.animalSystem or not self.mission.animalSystem.clusters then
-        return
-    end
-
-    local camera = getCamera()
-    if not camera then
-        return
-    end
-
-    local camX, camY, camZ = getWorldTranslation(camera)
-
-    for _, cluster in pairs(self.mission.animalSystem.clusters) do
-        if cluster.animals then
-            for _, animal in pairs(cluster.animals) do
-                if self:isValidAnimal(animal) then
-                    local name = self.animalNames[animal.id]
-
-                    if name then
-                        local x, y, z = getWorldTranslation(animal.nodeId)
-                        local distance = MathUtil.vector3Length(camX - x, camY - y, camZ - z)
-
-                        if distance <= self.settings.nameDistance then
-                            y = y + self.settings.nameHeight
-                            self:renderTextAtWorldPosition(name, x, y, z, distance)
-                        end
-                    end
-                end
-            end
-        end
-    end
+    return nil
 end
 
-
----Render text at world position with distance-based scaling
-function RealisticAnimalNames:renderTextAtWorldPosition(text, x, y, z, distance)
-    local sx, sy, sz = project(x, y, z)
+---Load animal names from savegame
+function RealisticAnimalNames:loadFromSavegame()
+    local filename = self:getSavegameFilePath()
+    if not filename or not fileExists(filename) then
+        print("Realistic Animal Names: No existing savegame data found")
+        return
+    end
     
-    if sz <= 1 then
-        setTextAlignment(RenderText.ALIGN_CENTER)
-        setTextVerticalAlignment(RenderText.VERTICAL_ALIGN_MIDDLE)
-        setTextBold(true)
+    local xmlFile = XMLFile.load("animalNamesXML", filename)
+    if not xmlFile then
+        print("Realistic Animal Names: Failed to load savegame data")
+        return
+    end
+    
+    -- Load animal names
+    local index = 0
+    while true do
+        local key = string.format("animalNames.animal(%d)", index)
+        local animalId = xmlFile:getValue(key .. "#id")
+        local name = xmlFile:getValue(key .. "#name")
         
-        -- Calculate alpha based on distance
-        local alpha = 1.0
-        if distance > self.settings.nameDistance * 0.8 then
-            alpha = 1.0 - ((distance - self.settings.nameDistance * 0.8) / (self.settings.nameDistance * 0.2))
+        if not animalId then
+            break
         end
         
-        setTextColor(1, 1, 1, alpha)
+        if name and name ~= "" then
+            self.animalNames[animalId] = name
+        end
         
-        -- Scale font size based on distance
-        local scale = 1.0 - (distance / self.settings.nameDistance) * 0.5
-        local fontSize = self.settings.fontSize * scale
-        
-        renderText(sx, sy, fontSize, text)
-        
-        setTextBold(false)
-        setTextAlignment(RenderText.ALIGN_LEFT)
-        setTextVerticalAlignment(RenderText.VERTICAL_ALIGN_BASELINE)
+        index = index + 1
     end
+    
+    xmlFile:delete()
+    
+    print(string.format("Realistic Animal Names: Loaded %d animal names", index))
 end
 
----Save animal names to savegame XML
+---Save animal names to savegame
 function RealisticAnimalNames:saveToSavegame()
-    local filename = self:getSavegamePath("animalNames.xml")
+    local filename = self:getSavegameFilePath()
     if not filename then
-        return
+        print("Realistic Animal Names: Cannot save - no savegame directory")
+        return false
     end
     
     local xmlFile = XMLFile.create("animalNamesXML", filename, "animalNames")
     if not xmlFile then
-        return
+        print("Realistic Animal Names: Failed to create XML file")
+        return false
     end
     
-    -- Save settings
-    xmlFile:setValue("animalNames#showNames", self.settings.showNames)
-    xmlFile:setValue("animalNames#nameDistance", self.settings.nameDistance)
-    xmlFile:setValue("animalNames#nameHeight", self.settings.nameHeight)
-    xmlFile:setValue("animalNames#fontSize", self.settings.fontSize)
-    
-    -- Save animal names
+    -- Save all animal names
     local index = 0
     for animalId, name in pairs(self.animalNames) do
         if name and name ~= "" then
@@ -531,75 +354,72 @@ function RealisticAnimalNames:saveToSavegame()
     xmlFile:save()
     xmlFile:delete()
     
-    -- Save per-savegame settings
-    self:savePerSavegameSettings()
+    return true
 end
 
----Load animal names from savegame XML
-function RealisticAnimalNames:loadFromSavegame()
-    local filename = self:getSavegamePath("animalNames.xml")
-    if not filename or not fileExists(filename) then
+---Draw floating name tags
+function RealisticAnimalNames:draw()
+    if not self.isInitialized or not self.settings.showNames then
         return
     end
     
-    local xmlFile = XMLFile.load("animalNamesXML", filename)
-    if not xmlFile then
+    if not self.mission.animalSystem then
         return
     end
     
-    -- Load settings (use as fallback)
-    self.settings.showNames = xmlFile:getValue("animalNames#showNames", self.settings.showNames)
-    self.settings.nameDistance = xmlFile:getValue("animalNames#nameDistance", self.settings.nameDistance)
-    self.settings.nameHeight = xmlFile:getValue("animalNames#nameHeight", self.settings.nameHeight)
-    self.settings.fontSize = xmlFile:getValue("animalNames#fontSize", self.settings.fontSize)
+    local camera = getCamera()
+    if not camera then
+        return
+    end
     
-    -- Load animal names
-    local index = 0
-    while true do
-        local key = string.format("animalNames.animal(%d)", index)
-        
-        if not xmlFile:hasProperty(key) then
-            break
+    local camX, camY, camZ = getWorldTranslation(camera)
+    local maxDistance = self.settings.nameDistance
+    
+    -- Set text rendering properties
+    setTextAlignment(RenderText.ALIGN_CENTER)
+    setTextVerticalAlignment(RenderText.VERTICAL_ALIGN_MIDDLE)
+    setTextBold(true)
+    
+    -- Draw name for each named animal
+    for _, cluster in pairs(self.mission.animalSystem.clusters) do
+        if cluster.animals then
+            for _, animal in pairs(cluster.animals) do
+                if self:isValidAnimal(animal) then
+                    local animalId = self:getAnimalId(animal)
+                    local name = self.animalNames[animalId]
+                    
+                    if name and name ~= "" then
+                        -- Get animal position
+                        local x, y, z = getWorldTranslation(animal.nodeId)
+                        local distance = MathUtil.vector3Length(camX - x, camY - y, camZ - z)
+                        
+                        -- Only draw if within range
+                        if distance < maxDistance then
+                            -- Calculate display position (above animal)
+                            local displayY = y + self.settings.nameHeight
+                            
+                            -- Calculate alpha based on distance
+                            local alpha = 1.0 - (distance / maxDistance)
+                            alpha = math.max(0.3, math.min(1.0, alpha))
+                            
+                            -- Calculate scale based on distance
+                            local scale = self.settings.fontSize * (1.0 + (distance / maxDistance) * 0.5)
+                            
+                            -- Render the name
+                            setTextColor(1, 1, 1, alpha)
+                            renderText3D(x, displayY, z, 0, 0, 0, scale, name)
+                        end
+                    end
+                end
+            end
         end
-        
-        local animalId = xmlFile:getValue(key .. "#id")
-        local name = xmlFile:getValue(key .. "#name")
-        
-        if animalId and name and name ~= "" then
-            self.animalNames[animalId] = name
-        end
-        
-        index = index + 1
     end
     
-    xmlFile:delete()
-end
-
----Called on mission delete
-function RealisticAnimalNames:onMissionDelete()
-    -- Save data before deleting
-    if self.mission:getIsServer() then
-        self:saveToSavegame()
-    end
-    
-    -- Unregister input action
-    if self.actionEventId then
-        self.inputManager:removeActionEvents(self)
-        self.actionEventId = nil
-    end
-    
-    -- Unsubscribe from messages
-    if self.messageCenter then
-        self.messageCenter:unsubscribeAll(self)
-    end
-    
-    -- Clear data
-    self.animalNames = {}
-    self.originalNames = {}
-    self.currentAnimal = nil
-    self.isInitialized = false
-    self.activeSavegame = nil
-    self.isMultiplayer = false
+    -- Reset text properties
+    setTextAlignment(RenderText.ALIGN_LEFT)
+    setTextVerticalAlignment(RenderText.VERTICAL_ALIGN_BASELINE)
+    setTextBold(false)
+    setTextColor(1, 1, 1, 1)
 end
 
 ---Update (called every frame)
@@ -608,43 +428,25 @@ function RealisticAnimalNames:update(dt)
         return
     end
     
-    -- Update settings from game settings periodically
-    self.lastSettingsCheck = self.lastSettingsCheck + dt
-    if self.lastSettingsCheck > 0.5 then  -- Check every 0.5 seconds
-        self:updateSettingsFromGame()
-        self.lastSettingsCheck = 0
-    end
+    -- Periodically sync settings from game settings
+    -- (in case user changes them in settings menu)
+    self:loadSettingsFromGame()
 end
 
----Update settings from game settings
-function RealisticAnimalNames:updateSettingsFromGame()
-    if g_gameSettings then
-        local newShowNames = g_gameSettings:getValue("showNames")
-        local newNameDistance = g_gameSettings:getValue("nameDistance")
-        local newNameHeight = g_gameSettings:getValue("nameHeight")
-        local newFontSize = g_gameSettings:getValue("fontSize")
-        
-        -- Check if settings changed
-        if newShowNames ~= nil and newShowNames ~= self.settings.showNames then
-            self.settings.showNames = newShowNames
-            self.perSavegameSettings.showNames = newShowNames
-        end
-        
-        if newNameDistance ~= nil and newNameDistance ~= self.settings.nameDistance then
-            self.settings.nameDistance = newNameDistance
-            self.perSavegameSettings.nameDistance = newNameDistance
-        end
-        
-        if newNameHeight ~= nil and newNameHeight ~= self.settings.nameHeight then
-            self.settings.nameHeight = newNameHeight
-            self.perSavegameSettings.nameHeight = newNameHeight
-        end
-        
-        if newFontSize ~= nil and newFontSize ~= self.settings.fontSize then
-            self.settings.fontSize = newFontSize
-            self.perSavegameSettings.fontSize = newFontSize
-        end
+---Called when mission is being deleted
+function RealisticAnimalNames:onMissionDelete()
+    -- Unregister input action
+    if self.actionEventId and self.inputManager then
+        self.inputManager:removeActionEvent(self.actionEventId)
+        self.actionEventId = nil
     end
+    
+    -- Clear data
+    self.animalNames = {}
+    self.originalNames = {}
+    self.currentAnimal = nil
+    self.isInitialized = false
+    self.isMultiplayer = false
 end
 
 ---Get animal name by ID
@@ -665,130 +467,17 @@ function RealisticAnimalNames:clearAllAnimalNames()
 end
 
 -- ============================================================================
--- Dialog Class (Enhanced)
+-- Global Initialization
 -- ============================================================================
 
-AnimalNamesDialog = {}
-local AnimalNamesDialog_mt = Class(AnimalNamesDialog, DialogElement)
-
-function AnimalNamesDialog.new(mod)
-    local self = DialogElement.new(nil, AnimalNamesDialog_mt)
-    
-    self.mod = mod
-    self.animal = nil
-    self.nameInput = nil
-    
-    return self
-end
-
-function AnimalNamesDialog:onCreate(element)
-    DialogElement.onCreate(self, element)
-    
-    -- Get references to UI elements
-    self.nameInput = element:getDescendantByName("nameInput")
-    
-    -- Get buttons
-    self.applyButton = element:getDescendantByName("applyButton")
-    self.resetButton = element:getDescendantByName("resetButton")
-    self.cancelButton = element:getDescendantByName("cancelButton")
-    
-    -- Set button callbacks
-    if self.applyButton then
-        self.applyButton.onClickCallback = self.onClickApply
-    end
-    
-    if self.resetButton then
-        self.resetButton.onClickCallback = self.onClickReset
-    end
-    
-    if self.cancelButton then
-        self.cancelButton.onClickCallback = self.onClickCancel
-    end
-end
-
-function AnimalNamesDialog:onOpen()
-    DialogElement.onOpen(self)
-    
-    -- Focus on text input
-    if self.nameInput then
-        FocusManager:setFocus(self.nameInput)
-    end
-end
-
-function AnimalNamesDialog:onClose()
-    DialogElement.onClose(self)
-    self.animal = nil
-end
-
-function AnimalNamesDialog:setAnimal(animal, currentName)
-    self.animal = animal
-    
-    if self.nameInput then
-        self.nameInput:setText(currentName or "")
-    end
-end
-
-function AnimalNamesDialog:onClickApply()
-    if not self.mod or not self.animal then
-        return
-    end
-    
-    local newName = self.nameInput:getText()
-    if self.mod.setAnimalName then
-        if self.mod:setAnimalName(self.animal, newName) then
-            self:close()
-        end
-    end
-end
-
-function AnimalNamesDialog:onClickReset()
-    if not self.mod or not self.animal then
-        return
-    end
-    
-    if self.mod.resetAnimalName then
-        if self.mod:resetAnimalName(self.animal) then
-            self:close()
-        end
-    end
-end
-
-function AnimalNamesDialog:onClickCancel()
-    self:close()
-end
-
-function AnimalNamesDialog:onEnterPressed()
-    self:onClickApply()
-end
-
-function AnimalNamesDialog:onEscPressed()
-    self:onClickCancel()
-end
-
--- ============================================================================
--- Global Registration
--- ============================================================================
+g_realisticAnimalNames = nil
 
 local modDirectory = g_currentModDirectory
 local modName = g_currentModName
 
-local function validateTypes(mod)
-    if type(mod.onMissionLoaded) ~= "function" then
-        print("Error: mod is invalid - missing onMissionLoaded function")
-        return false
-    end
-    
-    if type(mod.onMissionDelete) ~= "function" then
-        print("Error: mod is invalid - missing onMissionDelete function")
-        return false
-    end
-    
-    return true
-end
-
 local function load(mission)
     if g_realisticAnimalNames then
-        -- Unload existing instance
+        -- Cleanup existing instance
         removeModEventListener(g_realisticAnimalNames)
         if g_realisticAnimalNames.onMissionDelete then
             g_realisticAnimalNames:onMissionDelete()
@@ -796,6 +485,7 @@ local function load(mission)
         g_realisticAnimalNames = nil
     end
     
+    -- Create new instance
     g_realisticAnimalNames = RealisticAnimalNames.new(
         mission,
         modDirectory,
@@ -806,14 +496,10 @@ local function load(mission)
         mission.messageCenter
     )
     
-    if not validateTypes(g_realisticAnimalNames) then
-        g_realisticAnimalNames = nil
-        return
-    end
-    
+    -- Register as mod event listener
     addModEventListener(g_realisticAnimalNames)
     
-    print("Realistic Animal Names mod loaded")
+    print("Realistic Animal Names: Mod loaded successfully")
 end
 
 local function unload()
@@ -847,8 +533,8 @@ local function init()
         end
     end)
     
-    print("Realistic Animal Names mod initialized")
+    print("Realistic Animal Names: Initialization complete")
 end
 
--- Initialize on mod load
+-- Initialize the mod
 init()

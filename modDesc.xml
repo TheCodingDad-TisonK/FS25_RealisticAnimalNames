@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8" standalone="no" ?>
 <modDesc descVersion="105">
-    <author>YourName</author>
-    <version>2.0.0.0</version>
+    <author>TisonK</author>
+    <version>2.1.0.0</version>
+    
     <title>
         <en>Realistic Animal Names</en>
         <de>Realistische Tiernamen</de>
@@ -16,13 +17,24 @@
     </title>
 
     <description>
-        <en><![CDATA[Add custom names to your animals with floating name tags. Features include:
+        <en><![CDATA[Add custom names to your animals with floating name tags displayed above them.
+
+Features:
 • Custom name input for each animal
-• Floating name tags above animals
-• Toggle visibility in settings
-• Per-savegame storage
+• Floating name tags with distance-based scaling
+• Configurable display settings
+• Toggle visibility in settings menu
+• Per-savegame name storage
 • Keybind support (default: K)
-• MP compatible]]></en>
+• Multiplayer compatible
+
+Usage:
+1. Walk near an animal
+2. Press K to open naming dialog
+3. Enter custom name
+4. Adjust settings in game settings menu
+
+All names are saved per savegame and persist between sessions.]]></en>
         <de><![CDATA[Fügen Sie Ihren Tieren benutzerdefinierte Namen mit schwebenden Namensschildern hinzu.]]></de>
         <fr><![CDATA[Ajoutez des noms personnalisés à vos animaux avec des étiquettes flottantes.]]></fr>
     </description>
@@ -30,47 +42,102 @@
     <iconFilename>icon.dds</iconFilename>
     <multiplayer supported="true"/>
 
-    <!-- Settings -->
+    <!-- Settings integrated with game settings menu -->
     <settings>
-        <setting name="showNames" title="ran_setting_showNames" type="bool" default="true" />
-        <setting name="nameDistance" title="ran_setting_nameDistance" type="float" default="15" min="5" max="50" />
-        <setting name="nameHeight" title="ran_setting_nameHeight" type="float" default="1.8" min="0.5" max="3.0" />
-        <setting name="fontSize" title="ran_setting_fontSize" type="float" default="0.018" min="0.010" max="0.030" />
+        <setting name="showNames" 
+                 title="ran_setting_showNames" 
+                 type="bool" 
+                 default="true" />
+        
+        <setting name="nameDistance" 
+                 title="ran_setting_nameDistance" 
+                 type="float" 
+                 default="15" 
+                 min="5" 
+                 max="50" />
+        
+        <setting name="nameHeight" 
+                 title="ran_setting_nameHeight" 
+                 type="float" 
+                 default="1.8" 
+                 min="0.5" 
+                 max="3.0" />
+        
+        <setting name="fontSize" 
+                 title="ran_setting_fontSize" 
+                 type="float" 
+                 default="0.018" 
+                 min="0.010" 
+                 max="0.030" />
     </settings>
 
     <!-- Input Actions -->
     <actions>
-        <action name="RAN_OPEN_UI" category="VEHICLE" axisType="HALF" />
+        <action name="RAN_OPEN_UI" 
+                category="VEHICLE" 
+                axisType="HALF" />
     </actions>
 
+    <!-- Default Keybindings -->
     <inputBinding>
         <actionBinding action="RAN_OPEN_UI">
             <binding device="KB_MOUSE_DEFAULT" input="KEY_k" />
         </actionBinding>
     </inputBinding>
 
-    <!-- Localization -->
+    <!-- Localization Strings -->
     <l10n>
         <!-- Settings -->
         <text name="ran_setting_showNames">
             <en>Show Animal Names</en>
             <de>Tiernamen anzeigen</de>
             <fr>Afficher les noms des animaux</fr>
+            <pl>Pokaż nazwy zwierząt</pl>
+            <es>Mostrar nombres de animales</es>
+            <it>Mostra nomi animali</it>
+            <cz>Zobrazit jména zvířat</cz>
+            <br>Mostrar nomes de animais</br>
+            <uk>Показати імена тварин</uk>
+            <ru>Показывать имена животных</ru>
         </text>
+        
         <text name="ran_setting_nameDistance">
-            <en>Name Display Distance</en>
-            <de>Namensschildabstand</de>
-            <fr>Distance d'affichage des noms</fr>
+            <en>Name Display Distance (meters)</en>
+            <de>Namensschildabstand (Meter)</de>
+            <fr>Distance d'affichage des noms (mètres)</fr>
+            <pl>Odległość wyświetlania nazw (metry)</pl>
+            <es>Distancia de visualización de nombres (metros)</es>
+            <it>Distanza di visualizzazione nomi (metri)</it>
+            <cz>Vzdálenost zobrazení jmen (metry)</cz>
+            <br>Distância de exibição de nomes (metros)</br>
+            <uk>Відстань показу імен (метри)</uk>
+            <ru>Дистанция отображения имен (метры)</ru>
         </text>
+        
         <text name="ran_setting_nameHeight">
-            <en>Name Height Above Animal</en>
-            <de>Namensschildhöhe über dem Tier</de>
-            <fr>Hauteur du nom au-dessus de l'animal</fr>
+            <en>Name Height Above Animal (meters)</en>
+            <de>Namensschildhöhe über dem Tier (Meter)</de>
+            <fr>Hauteur du nom au-dessus de l'animal (mètres)</fr>
+            <pl>Wysokość nazwy nad zwierzęciem (metry)</pl>
+            <es>Altura del nombre sobre el animal (metros)</es>
+            <it>Altezza nome sopra l'animale (metri)</it>
+            <cz>Výška jména nad zvířetem (metry)</cz>
+            <br>Altura do nome acima do animal (metros)</br>
+            <uk>Висота імені над твариною (метри)</uk>
+            <ru>Высота имени над животным (метры)</ru>
         </text>
+        
         <text name="ran_setting_fontSize">
             <en>Name Font Size</en>
             <de>Schriftgröße der Namen</de>
             <fr>Taille de la police des noms</fr>
+            <pl>Rozmiar czcionki nazw</pl>
+            <es>Tamaño de fuente de nombres</es>
+            <it>Dimensione carattere nomi</it>
+            <cz>Velikost písma jmen</cz>
+            <br>Tamanho da fonte dos nomes</br>
+            <uk>Розмір шрифту імен</uk>
+            <ru>Размер шрифта имен</ru>
         </text>
 
         <!-- UI Elements -->
@@ -78,31 +145,78 @@
             <en>Animal Name Manager</en>
             <de>Tiernamen-Manager</de>
             <fr>Gestionnaire de noms d'animaux</fr>
+            <pl>Menedżer nazw zwierząt</pl>
+            <es>Gestor de nombres de animales</es>
+            <it>Gestore nomi animali</it>
+            <cz>Správce jmen zvířat</cz>
+            <br>Gerenciador de nomes de animais</br>
+            <uk>Менеджер імен тварин</uk>
+            <ru>Менеджер имен животных</ru>
         </text>
+        
         <text name="ran_ui_nameLabel">
             <en>Animal Name:</en>
             <de>Tiername:</de>
             <fr>Nom de l'animal :</fr>
+            <pl>Nazwa zwierzęcia:</pl>
+            <es>Nombre del animal:</es>
+            <it>Nome animale:</it>
+            <cz>Jméno zvířete:</cz>
+            <br>Nome do animal:</br>
+            <uk>Ім'я тварини:</uk>
+            <ru>Имя животного:</ru>
         </text>
+        
         <text name="ran_ui_placeholder">
             <en>Enter name...</en>
             <de>Name eingeben...</de>
             <fr>Entrez le nom...</fr>
+            <pl>Wprowadź nazwę...</pl>
+            <es>Ingrese el nombre...</es>
+            <it>Inserisci nome...</it>
+            <cz>Zadejte jméno...</cz>
+            <br>Digite o nome...</br>
+            <uk>Введіть ім'я...</uk>
+            <ru>Введите имя...</ru>
         </text>
+        
         <text name="ran_button_apply">
             <en>Apply</en>
             <de>Anwenden</de>
             <fr>Appliquer</fr>
+            <pl>Zastosuj</pl>
+            <es>Aplicar</es>
+            <it>Applica</it>
+            <cz>Použít</cz>
+            <br>Aplicar</br>
+            <uk>Застосувати</uk>
+            <ru>Применить</ru>
         </text>
+        
         <text name="ran_button_reset">
             <en>Reset</en>
             <de>Zurücksetzen</de>
             <fr>Réinitialiser</fr>
+            <pl>Resetuj</pl>
+            <es>Restablecer</es>
+            <it>Ripristina</it>
+            <cz>Obnovit</cz>
+            <br>Redefinir</br>
+            <uk>Скинути</uk>
+            <ru>Сбросить</ru>
         </text>
+        
         <text name="ran_button_cancel">
             <en>Cancel</en>
             <de>Abbrechen</de>
             <fr>Annuler</fr>
+            <pl>Anuluj</pl>
+            <es>Cancelar</es>
+            <it>Annulla</it>
+            <cz>Zrušit</cz>
+            <br>Cancelar</br>
+            <uk>Скасувати</uk>
+            <ru>Отмена</ru>
         </text>
 
         <!-- Notifications -->
@@ -110,39 +224,85 @@
             <en>Realistic Animal Names loaded! Press K near an animal to rename it.</en>
             <de>Realistische Tiernamen geladen! Drücken Sie K in der Nähe eines Tieres, um es umzubenennen.</de>
             <fr>Noms d'Animaux Réalistes chargé ! Appuyez sur K près d'un animal pour le renommer.</fr>
+            <pl>Realistyczne Nazwy Zwierząt załadowane! Naciśnij K w pobliżu zwierzęcia, aby je przemianować.</pl>
+            <es>¡Nombres Realistas para Animales cargado! Presiona K cerca de un animal para renombrarlo.</es>
+            <it>Nomi Animali Realistici caricato! Premi K vicino a un animale per rinominarlo.</it>
+            <cz>Realistická Jména Zvířat načtena! Stiskněte K poblíž zvířete pro přejmenování.</cz>
+            <br>Nomes Realistas de Animais carregado! Pressione K perto de um animal para renomeá-lo.</br>
+            <uk>Реалістичні Імена Тварин завантажено! Натисніть K біля тварини, щоб перейменувати її.</uk>
+            <ru>Реалистичные Имена Животных загружено! Нажмите K рядом с животным, чтобы переименовать его.</ru>
         </text>
+        
         <text name="ran_notification_noAnimal">
             <en>No animal nearby. Get closer to an animal.</en>
             <de>Kein Tier in der Nähe. Gehen Sie näher an ein Tier heran.</de>
             <fr>Aucun animal à proximité. Rapprochez-vous d'un animal.</fr>
+            <pl>Brak zwierzęcia w pobliżu. Podejdź bliżej zwierzęcia.</pl>
+            <es>No hay animales cerca. Acércate a un animal.</es>
+            <it>Nessun animale nelle vicinanze. Avvicinati a un animale.</it>
+            <cz>Žádné zvíře poblíž. Přibližte se ke zvířeti.</cz>
+            <br>Nenhum animal por perto. Aproxime-se de um animal.</br>
+            <uk>Немає тварини поблизу. Підійдіть ближче до тварини.</uk>
+            <ru>Нет животного поблизости. Подойдите ближе к животному.</ru>
         </text>
+        
         <text name="ran_notification_nameSet">
             <en>Animal name set to: %s</en>
             <de>Tiername gesetzt auf: %s</de>
             <fr>Nom de l'animal défini sur : %s</fr>
+            <pl>Nazwa zwierzęcia ustawiona na: %s</pl>
+            <es>Nombre del animal establecido en: %s</es>
+            <it>Nome animale impostato su: %s</it>
+            <cz>Jméno zvířete nastaveno na: %s</cz>
+            <br>Nome do animal definido como: %s</br>
+            <uk>Ім'я тварини встановлено на: %s</uk>
+            <ru>Имя животного установлено на: %s</ru>
         </text>
+        
         <text name="ran_notification_nameReset">
-            <en>Animal name reset</en>
-            <de>Tiername zurückgesetzt</de>
-            <fr>Nom de l'animal réinitialisé</fr>
+            <en>Animal name reset to default</en>
+            <de>Tiername auf Standard zurückgesetzt</de>
+            <fr>Nom de l'animal réinitialisé par défaut</fr>
+            <pl>Nazwa zwierzęcia zresetowana do domyślnej</pl>
+            <es>Nombre del animal restablecido a predeterminado</es>
+            <it>Nome animale ripristinato al predefinito</it>
+            <cz>Jméno zvířete obnoveno na výchozí</cz>
+            <br>Nome do animal redefinido para o padrão</br>
+            <uk>Ім'я тварини скинуто на стандартне</uk>
+            <ru>Имя животного сброшено на стандартное</ru>
+        </text>
+        
+        <text name="ran_notification_allNamesCleared">
+            <en>All animal names cleared</en>
+            <de>Alle Tiernamen gelöscht</de>
+            <fr>Tous les noms d'animaux effacés</fr>
+            <pl>Wszystkie nazwy zwierząt wyczyszczone</pl>
+            <es>Todos los nombres de animales borrados</es>
+            <it>Tutti i nomi animali cancellati</it>
+            <cz>Všechna jména zvířat vymazána</cz>
+            <br>Todos os nomes de animais limpos</br>
+            <uk>Усі імена тварин очищено</uk>
+            <ru>Все имена животных очищены</ru>
         </text>
 
-        <!-- Input -->
+        <!-- Input Action -->
         <text name="input_RAN_OPEN_UI">
             <en>Open Animal Naming UI</en>
             <de>Tiernamen-UI öffnen</de>
             <fr>Ouvrir l'interface de nommage</fr>
+            <pl>Otwórz interfejs nazewnictwa zwierząt</pl>
+            <es>Abrir interfaz de nombres de animales</es>
+            <it>Apri interfaccia nomi animali</it>
+            <cz>Otevřít rozhraní pro pojmenování zvířat</cz>
+            <br>Abrir interface de nomeação de animais</br>
+            <uk>Відкрити інтерфейс іменування тварин</uk>
+            <ru>Открыть интерфейс именования животных</ru>
         </text>
     </l10n>
 
-   <!-- Source Files -->
+    <!-- Source Files -->
     <extraSourceFiles>
         <sourceFile filename="src/RealisticAnimalNames.lua" />
         <sourceFile filename="gui/AnimalNamesDialog.lua" />
     </extraSourceFiles>
-    
-    <!-- GUI Definitions -->
-    <extraGUIs>
-        <gui filename="gui/AnimalNamesDialog.xml" />
-    </extraGUIs>
 </modDesc>
