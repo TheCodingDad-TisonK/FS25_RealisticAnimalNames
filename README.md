@@ -16,6 +16,18 @@ A comprehensive mod that allows you to give custom names to your animals with fl
 - **Performance Optimized**: Smart culling and frame-sliced rendering
 - **API Support**: Other mods can read/write animal names
 
+## 🌐 Multiplayer (NEW in 2.1.0!)
+
+The mod now features **full multiplayer synchronization**:
+
+- ✅ Names set by any player are visible to all players
+- ✅ All clients see the same names simultaneously
+- ✅ Server handles save data (no conflicts)
+- ✅ Request-based system prevents race conditions
+- ✅ Automatic sync when clients join
+
+**Note**: Only the server host needs to have the mod installed. Clients will automatically receive the mod data when connecting.
+
 ## Installation
 
 1. Download the mod ZIP file
