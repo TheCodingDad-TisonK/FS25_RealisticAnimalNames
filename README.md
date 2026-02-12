@@ -1,17 +1,20 @@
 # Realistic Animal Names for Farming Simulator 25
 
-A comprehensive mod that allows you to give custom names to your animals with floating name tags displayed above them.
+**Version: 2.1.0.0** | **Author: TisonK** | **Category: Animals, Gameplay**
 
-## Features
+A comprehensive mod that allows you to give custom names to your animals with floating name tags displayed above them. Built with performance and multiplayer compatibility in mind.
+
+## 🎯 Features
 
 - **Custom Animal Names**: Give each animal a unique, personalized name
-- **Floating Name Tags**: Names appear above animals in 3D space
-- **Distance-Based Display**: Names automatically scale and fade based on your distance
+- **Floating Name Tags**: Names appear above animals with distance-based scaling
 - **Configurable Settings**: Adjust visibility, distance, height, and font size
 - **Keybind Support**: Quick access with customizable keybind (default: K)
 - **Per-Savegame Storage**: Each save has its own set of animal names
-- **Multiplayer Compatible**: Works in multiplayer sessions
-- **Integrated Settings**: All settings accessible through the game's settings menu
+- **Multiplayer Compatible**: Full network synchronization (NEW in 2.1.0!)
+- **Integrated Settings**: All settings accessible through game's settings menu
+- **Performance Optimized**: Smart culling and frame-sliced rendering
+- **API Support**: Other mods can read/write animal names
 
 ## Installation
 
