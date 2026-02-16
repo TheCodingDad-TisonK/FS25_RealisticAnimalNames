@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8" standalone="no" ?>
 <GUI>
     <!-- GUI Definition for Animal Names Dialog -->
-    <!-- FS25 Realistic Animal Names - Version 2.1.0.0 -->
+    <!-- FS25 Realistic Animal Names - Version 2.2.0.0 -->
     
     <GuiElement type="screenElement">
         <GuiElement type="dialogElement" 
@@ -10,18 +10,17 @@
                    closeOnClick="false" 
                    closeOnEsc="true">
             
-            <!-- Background overlay (dims the screen) -->
+            <!-- Background overlay -->
             <GuiElement type="overlayElement" 
                        name="overlay" 
                        profile="ingameMenuDialogOverlay" />
             
-            <!-- Main dialog box - centered -->
+            <!-- Main dialog box -->
             <GuiElement type="flowLayoutElement" 
                        name="mainBox" 
                        profile="dialogBox"
                        layoutDirection="vertical">
                 
-                <!-- Position dialog in center of screen -->
                 <position relative="true" x="0.5" y="0.5" />
                 <size relative="false" width="500" height="auto" />
                 
@@ -40,15 +39,8 @@
                 <GuiElement type="flowLayoutElement" 
                            name="contentArea" 
                            profile="dialogBoxContent"
-                           layoutDirection="vertical">
-                    
-                    <!-- Animal Info (optional - shows type) -->
-                    <GuiElement type="flowLayoutElement" 
-                               name="animalInfoSection" 
-                               layoutDirection="horizontal"
-                               visible="false">
-                        <!-- Will be populated dynamically -->
-                    </GuiElement>
+                           layoutDirection="vertical"
+                           padding="20 20 20 20">
                     
                     <!-- Name Input Section -->
                     <GuiElement type="flowLayoutElement" 
@@ -67,23 +59,22 @@
                         <GuiElement type="textInputElement" 
                                    name="nameInput" 
                                    profile="dialogTextInput"
-                                   placeholder="$l10n_ran_ui_placeholder"
-                                   maxCharacters="30">
+                                   placeholder="$l10n_ran_ui_placeholder">
                             <size relative="false" width="400" height="40" />
-                            
-                            <!-- Input validation settings -->
-                            <validCharacters value="ALL" /> <!-- Allow UTF-8 -->
+                            <validCharacters value="ALL" /> <!-- UTF-8 support -->
                             <inputType value="text" />
+                            <maxLength value="30" />
                         </GuiElement>
                         
-                        <!-- Character counter (optional) -->
+                        <!-- Character counter -->
                         <GuiElement type="textElement" 
                                    name="charCounter" 
                                    profile="dialogSmallText"
                                    text="0/30"
                                    alignment="right"
-                                   margin="5 0 0 0"
-                                   visible="false" />
+                                   margin="5 0 0 0">
+                            <textColor r="0.8" g="0.8" b="0.8" a="1" />
+                        </GuiElement>
                     </GuiElement>
                     
                     <!-- Spacer -->
@@ -98,11 +89,12 @@
                                horizontalAlignment="center"
                                margin="0">
                         
-                        <!-- Apply Button (Primary) -->
+                        <!-- Apply Button -->
                         <GuiElement type="buttonElement" 
                                    name="applyButton" 
                                    profile="buttonPrimary"
-                                   text="$l10n_ran_button_apply">
+                                   text="$l10n_ran_button_apply"
+                                   disabled="true"> <!-- Initially disabled -->
                             <size relative="false" width="120" height="40" />
                             <margin right="10" />
                         </GuiElement>
@@ -111,7 +103,8 @@
                         <GuiElement type="buttonElement" 
                                    name="resetButton" 
                                    profile="buttonSecondary"
-                                   text="$l10n_ran_button_reset">
+                                   text="$l10n_ran_button_reset"
+                                   disabled="true">
                             <size relative="false" width="120" height="40" />
                             <margin right="10" />
                         </GuiElement>
@@ -132,6 +125,7 @@
                                text="Enter = Apply • Esc = Cancel"
                                margin="15 0 0 0">
                         <size relative="false" width="auto" height="20" />
+                        <textColor r="0.6" g="0.6" b="0.6" a="1" />
                     </GuiElement>
                     
                 </GuiElement>

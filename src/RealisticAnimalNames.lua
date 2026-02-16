@@ -1,11 +1,8 @@
 -- ============================================================================
--- Realistic Animal Names for FS25 - PROFESSIONAL EDITION
+-- Realistic Animal Names for FS25 - PROFESSIONAL EDITION v2.2.0.0
 -- ============================================================================
--- Version: 2.1.0.0
 -- Author: TisonK
--- Description: Add custom names to animals with floating name tags
--- ============================================================================
--- COMPLETE REWRITE: Fixed architecture, performance, and multiplayer
+-- Description: Custom animal names with floating tags, multiplayer sync
 -- ============================================================================
 
 ---@class RealisticAnimalNames
@@ -14,12 +11,12 @@ RealisticAnimalNames.__index = RealisticAnimalNames
 
 -- Constants
 local SAVE_FILE_NAME = "realisticAnimalNames.xml"
-local ANIMATION_UPDATE_INTERVAL = 250 -- ms between distance recalculations
-local SAVE_DEBOUNCE_INTERVAL = 500 -- ms between saves
+local SAVE_DEBOUNCE_INTERVAL = 500 -- ms
 local MAX_NAME_LENGTH = 30
 local PERFORMANCE_MAX_ANIMALS_PER_FRAME = 50
+local NETWORK_TIMEOUT = 5000 -- ms for sync requests
 
----Initialize the mod - Called by FS25
+---Initialize the mod
 ---@param mission table Mission instance
 ---@param modDirectory string Mod folder path
 ---@param modName string Mod name
@@ -40,10 +37,11 @@ function RealisticAnimalNames:new(mission, modDirectory, modName)
     self.isMultiplayer = mission:getIsMultiplayer()
     
     -- Data storage
-    self.animalNames = {}      -- id -> name
-    self.nameCache = {}        -- nodeId -> name (for fast lookup)
+    self.animalNames = {}      -- farmId_animalId -> name
+    self.nameCache = {}        -- nodeId -> name (fast lookup)
+    self.pendingSync = {}       -- Pending sync requests (MP client)
     
-    -- Settings cache
+    -- Settings with defaults
     self.settings = {
         showNames = true,
         nameDistance = 15,
@@ -52,10 +50,9 @@ function RealisticAnimalNames:new(mission, modDirectory, modName)
     }
     
     -- Performance optimization
-    self.lastDistanceUpdate = 0
-    self.nearbyAnimals = {}    -- Cached nearby animals
-    self.animalPositions = {}  -- Cached positions
-    self.animalUpdateIndex = 0
+    self.nearbyAnimals = { cacheTime = 0 }
+    self.animalUpdateIndex = 1
+    self.lastClusterCount = 0
     
     -- UI State
     self.dialog = nil
@@ -68,77 +65,24 @@ function RealisticAnimalNames:new(mission, modDirectory, modName)
     
     -- Network
     self.networkEventsRegistered = false
-    
-    -- Event listeners
-    self.eventListeners = {}
+    self.syncRequestTimer = 0
+    self.syncRequested = false
     
     -- Initialization state
     self.isInitialized = false
     self.actionEventId = nil
     
-    print("[RealisticAnimalNames] Instance created (Server:", self.isServer, "Client:", self.isClient, "MP:", self.isMultiplayer, ")")
+    -- Debug mode (disable in production)
+    self.debug = false
+    
+    print("[RAN] Instance created (Server:", self.isServer, "Client:", self.isClient, "MP:", self.isMultiplayer, ")")
     
     return self
 end
 
----Register all event listeners
-function RealisticAnimalNames:registerEventListeners()
-    if not self.mission then return end
-    
-    -- Animal system events
-    if self.mission.animalSystem then
-        -- Listen for animal removal to clean up names
-        if self.mission.animalSystem.addRemoveAnimalListener then
-            self.mission.animalSystem:addRemoveAnimalListener(function(animal, isAdded)
-                if not isAdded then
-                    self:onAnimalRemoved(animal)
-                end
-            end)
-        end
-    end
-    
-    -- Settings change listener
-    if g_gameSettings and g_gameSettings.addSettingsChangeListener then
-        g_gameSettings:addSettingsChangeListener(function(name, value)
-            if name:find("^ran_") then
-                self:onSettingsChanged(name, value)
-            end
-        end)
-    end
-    
-    -- Network listeners (if multiplayer)
-    if self.isMultiplayer and self.isServer then
-        self:registerNetworkEvents()
-    end
-end
-
----Register multiplayer network events
-function RealisticAnimalNames:registerNetworkEvents()
-    if self.networkEventsRegistered then return end
-    
-    if g_network and g_network:getServerConnection() then
-        -- Client requests name change
-        g_network:addEvent(NetworkEventType.RAN_REQUEST_NAME_CHANGE, 
-            function(connection, animalId, newName, userId)
-                self:onNameChangeRequest(connection, animalId, newName, userId)
-            end)
-        
-        -- Server broadcasts name change
-        g_network:addEvent(NetworkEventType.RAN_NAME_CHANGED,
-            function(connection, animalId, newName, serverTime)
-                self:onNameChangedFromServer(animalId, newName, serverTime)
-            end)
-        
-        -- Request initial sync
-        g_network:addEvent(NetworkEventType.RAN_REQUEST_SYNC,
-            function(connection, userId)
-                self:onSyncRequest(connection, userId)
-            end)
-        
-        self.networkEventsRegistered = true
-        print("[RealisticAnimalNames] Network events registered")
-    end
-end
+-- ============================================================================
+-- INITIALIZATION & LIFECYCLE
+-- ============================================================================
 
 ---Called on mission load
 function RealisticAnimalNames:onMissionLoaded(mission)
@@ -161,6 +105,9 @@ function RealisticAnimalNames:onMissionLoaded(mission)
     -- Register all event listeners
     self:registerEventListeners()
     
+    -- Register network events
+    self:registerNetworkEvents()
+    
     -- Request sync from server if we're a client in multiplayer
     if self.isMultiplayer and self.isClient and not self.isServer then
         self:requestSyncFromServer()
@@ -173,7 +120,56 @@ function RealisticAnimalNames:onMissionLoaded(mission)
         self:showNotification("ran_notification_loaded", FSBaseMission.INGAME_NOTIFICATION_INFO)
     end
     
-    print("[RealisticAnimalNames] Mission loaded successfully")
+    self:log("Mission loaded successfully")
+end
+
+---Register all event listeners
+function RealisticAnimalNames:registerEventListeners()
+    if not self.mission then return end
+    
+    -- Animal removal listener
+    if self.mission.animalSystem and self.mission.animalSystem.addRemoveAnimalListener then
+        self.mission.animalSystem:addRemoveAnimalListener(function(animal, isAdded)
+            if not isAdded then
+                self:onAnimalRemoved(animal)
+            end
+        end)
+    end
+    
+    -- Settings change listener
+    if g_gameSettings and g_gameSettings.addSettingsChangeListener then
+        g_gameSettings:addSettingsChangeListener(function(name, value)
+            if name:find("^ran_") then
+                self:onSettingsChanged(name, value)
+            end
+        end)
+    end
+end
+
+---Register input actions for FS25
+function RealisticAnimalNames:registerInputActions()
+    if not self.inputManager then return end
+    
+    local success, actionEventId = pcall(function()
+        return self.inputManager:registerActionEvent(
+            InputAction.RAN_OPEN_UI,
+            self,
+            self.onOpenUIInput,
+            false,  -- onDown
+            true,   -- onUp
+            false,  -- onEvent
+            true    -- always
+        )
+    end)
+    
+    if success and actionEventId then
+        self.actionEventId = actionEventId
+        self.inputManager:setActionEventTextVisibility(actionEventId, false)
+        self.inputManager:setActionEventTextPriority(actionEventId, GS_PRIO_HIGH)
+        self:log("Input action registered")
+    else
+        print("[RAN] ERROR: Failed to register input action")
+    end
 end
 
 ---Async GUI loading to prevent frame drops
@@ -181,15 +177,22 @@ function RealisticAnimalNames:loadGUIAsync()
     local xmlFilename = self.modDirectory .. "gui/AnimalNamesDialog.xml"
     
     if not fileExists(xmlFilename) then
-        print("[RealisticAnimalNames] ERROR: GUI file not found: " .. xmlFilename)
+        print("[RAN] ERROR: GUI file not found: " .. xmlFilename)
         return
     end
     
     -- Defer GUI loading to next frame
     self:scheduleCallback(function()
-        self.gui:loadGui(xmlFilename, "AnimalNamesDialog", self)
-        self.dialogLoaded = true
-        print("[RealisticAnimalNames] GUI loaded")
+        local success, dialog = pcall(function()
+            return self.gui:loadGui(xmlFilename, "AnimalNamesDialog", self)
+        end)
+        
+        if success and dialog then
+            self.dialogLoaded = true
+            self:log("GUI loaded")
+        else
+            print("[RAN] ERROR: Failed to load GUI")
+        end
     end, 1)
 end
 
@@ -203,8 +206,8 @@ function RealisticAnimalNames:scheduleCallback(func, delayFrames)
             g_currentMission:addUpdateCallback(execute)
         else
             local success, err = pcall(func)
-            if not success then
-                print("[RealisticAnimalNames] Callback error:", err)
+            if not success and self.debug then
+                print("[RAN] Callback error:", err)
             end
         end
     end
@@ -216,14 +219,18 @@ function RealisticAnimalNames:scheduleCallback(func, delayFrames)
     end
 end
 
+-- ============================================================================
+-- SETTINGS MANAGEMENT
+-- ============================================================================
+
 ---Load settings from game settings system
 function RealisticAnimalNames:loadSettingsFromGame()
     if not g_gameSettings then return end
     
-    local showNames = g_gameSettings:getValue("showNames")
-    local nameDistance = g_gameSettings:getValue("nameDistance")
-    local nameHeight = g_gameSettings:getValue("nameHeight")
-    local fontSize = g_gameSettings:getValue("fontSize")
+    local showNames = g_gameSettings:getValue("ran_showNames")
+    local nameDistance = g_gameSettings:getValue("ran_nameDistance")
+    local nameHeight = g_gameSettings:getValue("ran_nameHeight")
+    local fontSize = g_gameSettings:getValue("ran_fontSize")
     
     if showNames ~= nil then self.settings.showNames = showNames end
     if nameDistance ~= nil then self.settings.nameDistance = nameDistance end
@@ -234,45 +241,22 @@ end
 ---Settings changed callback
 function RealisticAnimalNames:onSettingsChanged(name, value)
     local settingMap = {
-        showNames = "showNames",
-        nameDistance = "nameDistance",
-        nameHeight = "nameHeight",
-        fontSize = "fontSize"
+        ran_showNames = "showNames",
+        ran_nameDistance = "nameDistance",
+        ran_nameHeight = "nameHeight",
+        ran_fontSize = "fontSize"
     }
     
-    for settingName, key in pairs(settingMap) do
-        if name == settingName then
-            self.settings[key] = value
-            break
-        end
+    local key = settingMap[name]
+    if key then
+        self.settings[key] = value
+        self:log("Setting changed:", name, value)
     end
 end
 
----Register input actions for FS25
-function RealisticAnimalNames:registerInputActions()
-    if not self.inputManager then return end
-    
-    local success, actionEventId = pcall(function()
-        return self.inputManager:registerActionEvent(
-            InputAction.RAN_OPEN_UI,
-            self,
-            self.onOpenUIInput,
-            false,
-            true,
-            false,
-            true
-        )
-    end)
-    
-    if success and actionEventId then
-        self.actionEventId = actionEventId
-        self.inputManager:setActionEventTextVisibility(actionEventId, false)
-        self.inputManager:setActionEventTextPriority(actionEventId, GS_PRIO_HIGH)
-        print("[RealisticAnimalNames] Input action registered")
-    else
-        print("[RealisticAnimalNames] Failed to register input action")
-    end
-end
+-- ============================================================================
+-- ANIMAL DETECTION & IDENTIFICATION
+-- ============================================================================
 
 ---Input callback - open UI near animal
 function RealisticAnimalNames:onOpenUIInput(_, inputValue)
@@ -289,9 +273,11 @@ function RealisticAnimalNames:onOpenUIInput(_, inputValue)
     end
 end
 
----PERFORMANCE OPTIMIZATION: Find closest animal using spatial proximity
+---Find closest animal using spatial proximity (optimized)
 function RealisticAnimalNames:getClosestAnimal(maxDistance)
-    if not self.mission.animalSystem then return nil end
+    if not self.mission.animalSystem or not self.mission.animalSystem.clusters then
+        return nil
+    end
     
     local camera = getCamera()
     if not camera then return nil end
@@ -300,19 +286,14 @@ function RealisticAnimalNames:getClosestAnimal(maxDistance)
     local closestAnimal = nil
     local closestDistance = maxDistance
     
-    -- OPTIMIZATION: Early exit if no clusters
-    if not self.mission.animalSystem.clusters then
-        return nil
-    end
-    
-    -- Use cache if available and recent
+    -- Use cache if recent (200ms)
     if self.nearbyAnimals.cacheTime and g_currentTime - self.nearbyAnimals.cacheTime < 200 then
         return self.nearbyAnimals.closest
     end
     
     -- Iterate with performance limit
     local animalsChecked = 0
-    local maxCheck = 200 -- Don't check more than 200 animals per call
+    local maxCheck = 200
     
     for _, cluster in pairs(self.mission.animalSystem.clusters) do
         if cluster.animals then
@@ -357,17 +338,12 @@ function RealisticAnimalNames:getAnimalId(animal)
     if not animal or not animal.id then return nil end
     
     -- In FS25, animals have stable IDs within a session
-    -- For multiplayer, we need to ensure ID is consistent across clients
-    if self.isMultiplayer then
-        -- Use a combination of animal ID and farm ID for uniqueness
-        local farmId = animal.ownerFarmId or 1
-        return string.format("%d_%d", farmId, animal.id)
-    else
-        return tostring(animal.id)
-    end
+    -- Use farm ID + animal ID for uniqueness across farms
+    local farmId = animal.ownerFarmId or 1
+    return string.format("%d_%d", farmId, animal.id)
 end
 
----Get display name for animal (returns custom name or default localized name)
+---Get display name for animal (custom or default)
 function RealisticAnimalNames:getAnimalDisplayName(animal)
     if not animal then return "" end
     
@@ -378,7 +354,6 @@ function RealisticAnimalNames:getAnimalDisplayName(animal)
         return customName
     end
     
-    -- Return default animal type name if no custom name
     return self:getDefaultAnimalName(animal)
 end
 
@@ -390,7 +365,7 @@ function RealisticAnimalNames:getDefaultAnimalName(animal)
     
     -- Try to get localized name
     local typeKey = string.format("animal_%s", animal.animalType)
-    local localizedName = self.i18n:getText(typeKey)
+    local localizedName = self.i18n and self.i18n:getText(typeKey)
     
     if localizedName and localizedName ~= typeKey then
         return localizedName
@@ -400,7 +375,58 @@ function RealisticAnimalNames:getDefaultAnimalName(animal)
     return animal.animalType or "Animal"
 end
 
----Open the naming dialog for an animal
+---Find animal by ID (for MP sync)
+function RealisticAnimalNames:findAnimalById(animalId)
+    if not self.mission.animalSystem or not self.mission.animalSystem.clusters then
+        return nil
+    end
+    
+    -- Parse farm ID and animal ID
+    local farmId, id = animalId:match("^(%d+)_(%d+)$")
+    if not farmId then
+        id = animalId
+    end
+    
+    local targetId = tonumber(id)
+    if not targetId then return nil end
+    
+    for _, cluster in pairs(self.mission.animalSystem.clusters) do
+        if cluster.animals then
+            for _, animal in pairs(cluster.animals) do
+                if animal and animal.id == targetId then
+                    return animal
+                end
+            end
+        end
+    end
+    
+    return nil
+end
+
+---Clean up when animal is removed
+function RealisticAnimalNames:onAnimalRemoved(animal)
+    if not animal then return end
+    
+    local animalId = self:getAnimalId(animal)
+    if animalId and self.animalNames[animalId] then
+        self.animalNames[animalId] = nil
+        self:log("Cleaned up name for removed animal:", animalId)
+        
+        if self.isServer then
+            self:scheduleSave()
+        end
+    end
+    
+    if animal.nodeId then
+        self.nameCache[animal.nodeId] = nil
+    end
+end
+
+-- ============================================================================
+-- UI DIALOG MANAGEMENT
+-- ============================================================================
+
+---Open naming dialog for an animal
 function RealisticAnimalNames:openDialogForAnimal(animal)
     if not animal or not self.dialogLoaded then return end
     
@@ -408,7 +434,6 @@ function RealisticAnimalNames:openDialogForAnimal(animal)
     local animalId = self:getAnimalId(animal)
     local currentName = self.animalNames[animalId] or ""
     
-    -- Show dialog with error handling
     local success, dialog = pcall(function()
         return self.gui:showDialog("AnimalNamesDialog")
     end)
@@ -416,28 +441,27 @@ function RealisticAnimalNames:openDialogForAnimal(animal)
     if success and dialog and dialog.setAnimal then
         dialog:setAnimal(animal, currentName)
     else
-        print("[RealisticAnimalNames] Failed to open dialog")
+        print("[RAN] ERROR: Failed to open dialog")
     end
 end
 
----Set an animal's name (called from UI)
+---Set animal name (called from UI)
 function RealisticAnimalNames:setAnimalName(animal, name)
     if not animal then return false end
     
     local animalId = self:getAnimalId(animal)
     if not animalId then return false end
     
-    -- Validate and sanitize name
     name = name and self:sanitizeName(tostring(name)) or ""
     
     if name == "" then
         return self:resetAnimalName(animal)
     end
     
-    -- In multiplayer, send request to server
+    -- In multiplayer, client sends request to server
     if self.isMultiplayer and not self.isServer then
         self:requestNameChange(animalId, name)
-        return true -- Optimistic update
+        return true -- Optimistic
     end
     
     -- Store the name
@@ -448,55 +472,28 @@ function RealisticAnimalNames:setAnimalName(animal, name)
         self.nameCache[animal.nodeId] = name
     end
     
-    -- Save to file (server only)
+    -- Save (server only)
     if self.isServer then
         self:scheduleSave()
     end
     
-    -- Broadcast to clients (if server in MP)
+    -- Broadcast to clients (server in MP)
     if self.isMultiplayer and self.isServer then
         self:broadcastNameChange(animalId, name)
     end
     
-    -- Show notification
-    local notificationText = string.format(self.i18n:getText("ran_notification_nameSet"), name)
-    g_currentMission:addIngameNotification(FSBaseMission.INGAME_NOTIFICATION_OK, notificationText)
-    
+    self:showNotificationWithParam("ran_notification_nameSet", name, FSBaseMission.INGAME_NOTIFICATION_OK)
     return true
 end
 
----Sanitize and validate name string
-function RealisticAnimalNames:sanitizeName(name)
-    if not name then return "" end
-    
-    -- Trim whitespace
-    name = name:gsub("^%s+", ""):gsub("%s+$", "")
-    
-    -- Remove any control characters
-    name = name:gsub("[%c]", "")
-    
-    -- Limit length (UTF-8 safe)
-    local byteLen = #name
-    if byteLen > MAX_NAME_LENGTH * 3 then -- Worst case UTF-8
-        -- Simple truncation at byte limit
-        name = name:sub(1, MAX_NAME_LENGTH * 2)
-        -- Ensure we don't cut a multibyte character
-        while #name > 0 and name:byte(#name) >= 0x80 do
-            name = name:sub(1, #name - 1)
-        end
-    end
-    
-    return name
-end
-
----Reset an animal's name
+---Reset animal name to default
 function RealisticAnimalNames:resetAnimalName(animal)
     if not animal then return false end
     
     local animalId = self:getAnimalId(animal)
     if not animalId then return false end
     
-    -- In multiplayer, send request to server
+    -- Client sends request to server
     if self.isMultiplayer and not self.isServer then
         self:requestNameChange(animalId, "")
         return true
@@ -505,28 +502,145 @@ function RealisticAnimalNames:resetAnimalName(animal)
     -- Remove the name
     self.animalNames[animalId] = nil
     
-    -- Update cache
     if animal.nodeId then
         self.nameCache[animal.nodeId] = nil
     end
     
-    -- Save to file (server only)
     if self.isServer then
         self:scheduleSave()
     end
     
-    -- Broadcast to clients (if server in MP)
     if self.isMultiplayer and self.isServer then
         self:broadcastNameChange(animalId, "")
     end
     
-    -- Show notification
     self:showNotification("ran_notification_nameReset", FSBaseMission.INGAME_NOTIFICATION_OK)
-    
     return true
 end
 
----Request name change from server (MP client)
+---Sanitize and validate name string (UTF-8 safe)
+function RealisticAnimalNames:sanitizeName(name)
+    if not name then return "" end
+    
+    -- Trim whitespace
+    name = name:gsub("^%s+", ""):gsub("%s+$", "")
+    
+    -- Remove control characters
+    name = name:gsub("[%c]", "")
+    
+    -- Limit length (UTF-8 safe)
+    local len = self:utf8len(name)
+    if len > MAX_NAME_LENGTH then
+        -- Truncate at character boundary
+        local truncated = ""
+        local count = 0
+        for char in string.gmatch(name, "[%z\1-\127\194-\244][\128-\191]*") do
+            if count < MAX_NAME_LENGTH then
+                truncated = truncated .. char
+                count = count + 1
+            else
+                break
+            end
+        end
+        name = truncated
+    end
+    
+    return name
+end
+
+---UTF-8 string length
+function RealisticAnimalNames:utf8len(str)
+    if not str then return 0 end
+    local len = 0
+    for _ in string.gmatch(str, "[%z\1-\127\194-\244][\128-\191]*") do
+        len = len + 1
+    end
+    return len
+end
+
+---Clear all animal names
+function RealisticAnimalNames:clearAllAnimalNames()
+    if not self.isServer then
+        if self.isMultiplayer then
+            -- Request each name to be cleared
+            for animalId, _ in pairs(self.animalNames) do
+                self:requestNameChange(animalId, "")
+            end
+        end
+        return
+    end
+    
+    self.animalNames = {}
+    self.nameCache = {}
+    
+    self:scheduleSave()
+    self:showNotification("ran_notification_allNamesCleared", FSBaseMission.INGAME_NOTIFICATION_OK)
+    
+    if self.isMultiplayer then
+        for animalId, _ in pairs(self.animalNames) do
+            self:broadcastNameChange(animalId, "")
+        end
+    end
+end
+
+-- ============================================================================
+-- MULTIPLAYER NETWORKING
+-- ============================================================================
+
+---Register network events
+function RealisticAnimalNames:registerNetworkEvents()
+    if self.networkEventsRegistered then return end
+    if not g_network then return end
+    
+    -- Define network event types
+    NetworkEventType = NetworkEventType or {}
+    NetworkEventType.RAN_REQUEST_NAME_CHANGE = "RAN_REQUEST_NAME_CHANGE"
+    NetworkEventType.RAN_NAME_CHANGED = "RAN_NAME_CHANGED"
+    NetworkEventType.RAN_REQUEST_SYNC = "RAN_REQUEST_SYNC"
+    NetworkEventType.RAN_SYNC_COMPLETE = "RAN_SYNC_COMPLETE"
+    
+    -- Register events with error handling
+    local function registerEvent(name, handler)
+        local success, err = pcall(function()
+            g_network:addEvent(name, handler)
+        end)
+        if not success and self.debug then
+            print("[RAN] Network event registration failed:", name, err)
+        end
+        return success
+    end
+    
+    -- Server: handle client requests
+    if self.isServer then
+        registerEvent(NetworkEventType.RAN_REQUEST_NAME_CHANGE, 
+            function(connection, animalId, newName, userId)
+                self:onNameChangeRequest(connection, animalId, newName, userId)
+            end)
+        
+        registerEvent(NetworkEventType.RAN_REQUEST_SYNC,
+            function(connection, userId)
+                self:onSyncRequest(connection, userId)
+            end)
+    end
+    
+    -- Client: handle server broadcasts
+    if self.isClient then
+        registerEvent(NetworkEventType.RAN_NAME_CHANGED,
+            function(connection, animalId, newName, serverTime)
+                self:onNameChangedFromServer(animalId, newName, serverTime)
+            end)
+        
+        registerEvent(NetworkEventType.RAN_SYNC_COMPLETE,
+            function(connection)
+                self:onSyncComplete()
+            end)
+    end
+    
+    self.networkEventsRegistered = true
+    self:log("Network events registered")
+end
+
+---Request name change from server (client)
 function RealisticAnimalNames:requestNameChange(animalId, name)
     if not self.isMultiplayer or not g_network then return end
     
@@ -537,7 +651,7 @@ function RealisticAnimalNames:requestNameChange(animalId, name)
             name, 
             g_currentMission.playerUserId
         )
-        print("[RealisticAnimalNames] Name change request sent:", animalId, name)
+        self:log("Name change request sent:", animalId, name)
     end
 end
 
@@ -545,10 +659,8 @@ end
 function RealisticAnimalNames:onNameChangeRequest(connection, animalId, newName, userId)
     if not self.isServer then return end
     
-    -- Validate request (optional: check permissions)
-    print("[RealisticAnimalNames] Name change request from user", userId, "for", animalId)
+    self:log("Name change request from user", userId, "for", animalId)
     
-    -- Apply the change
     local animal = self:findAnimalById(animalId)
     if animal then
         if newName == "" then
@@ -557,10 +669,7 @@ function RealisticAnimalNames:onNameChangeRequest(connection, animalId, newName,
             self.animalNames[animalId] = self:sanitizeName(newName)
         end
         
-        -- Save to file
         self:scheduleSave()
-        
-        -- Broadcast to all clients
         self:broadcastNameChange(animalId, newName)
     end
 end
@@ -586,7 +695,7 @@ function RealisticAnimalNames:onNameChangedFromServer(animalId, newName, serverT
         self.animalNames[animalId] = newName
     end
     
-    print("[RealisticAnimalNames] Name updated from server:", animalId, newName)
+    self:log("Name updated from server:", animalId, newName)
 end
 
 ---Request full sync from server (client)
@@ -596,7 +705,9 @@ function RealisticAnimalNames:requestSyncFromServer()
     local connection = g_network:getServerConnection()
     if connection then
         connection:sendEvent(NetworkEventType.RAN_REQUEST_SYNC, g_currentMission.playerUserId)
-        print("[RealisticAnimalNames] Requested sync from server")
+        self.syncRequested = true
+        self.syncRequestTimer = NETWORK_TIMEOUT
+        self:log("Requested sync from server")
     end
 end
 
@@ -604,57 +715,29 @@ end
 function RealisticAnimalNames:onSyncRequest(connection, userId)
     if not self.isServer then return end
     
-    print("[RealisticAnimalNames] Sending sync to user", userId)
+    self:log("Sending sync to user", userId)
     
-    -- Send all names to the requesting client
+    -- Send all names to requesting client
+    local count = 0
     for animalId, name in pairs(self.animalNames) do
         connection:sendEvent(NetworkEventType.RAN_NAME_CHANGED, animalId, name, g_currentTime)
+        count = count + 1
     end
+    
+    -- Send completion marker
+    connection:sendEvent(NetworkEventType.RAN_SYNC_COMPLETE)
+    self:log("Sync complete, sent", count, "names")
 end
 
----Find animal by ID (for MP sync)
-function RealisticAnimalNames:findAnimalById(animalId)
-    if not self.mission.animalSystem then return nil end
-    
-    -- Parse farm ID and animal ID
-    local farmId, id = animalId:match("^(%d+)_(%d+)$")
-    if not farmId then
-        id = animalId
-    end
-    
-    for _, cluster in pairs(self.mission.animalSystem.clusters) do
-        if cluster.animals then
-            for _, animal in pairs(cluster.animals) do
-                if animal and animal.id == tonumber(id) then
-                    return animal
-                end
-            end
-        end
-    end
-    
-    return nil
+---Handle sync complete (client)
+function RealisticAnimalNames:onSyncComplete()
+    self.syncRequested = false
+    self:log("Sync from server complete")
 end
 
----Clean up name when animal is removed/sold
-function RealisticAnimalNames:onAnimalRemoved(animal)
-    if not animal then return end
-    
-    local animalId = self:getAnimalId(animal)
-    if animalId and self.animalNames[animalId] then
-        self.animalNames[animalId] = nil
-        print("[RealisticAnimalNames] Cleaned up name for removed animal:", animalId)
-        
-        -- Save changes
-        if self.isServer then
-            self:scheduleSave()
-        end
-    end
-    
-    -- Clean cache
-    if animal.nodeId then
-        self.nameCache[animal.nodeId] = nil
-    end
-end
+-- ============================================================================
+-- SAVE/LOAD SYSTEM
+-- ============================================================================
 
 ---Schedule a save operation (debounced)
 function RealisticAnimalNames:scheduleSave()
@@ -666,21 +749,18 @@ end
 
 ---Save animal names to savegame
 function RealisticAnimalNames:saveToSavegame()
-    if not self.isServer then return end
+    if not self.isServer then return false end
     
     local filename = self:getSavegameFilePath()
     if not filename then
-        print("[RealisticAnimalNames] Cannot save - no savegame directory")
+        print("[RAN] Cannot save - no savegame directory")
         return false
     end
     
-    -- Use pcall to prevent crashes
-    local success, xmlFile = pcall(function()
-        return XMLFile.create("animalNamesXML", filename, "animalNames")
-    end)
-    
-    if not success or not xmlFile then
-        print("[RealisticAnimalNames] Failed to create XML file")
+    -- Use Giants XML API
+    local xmlFile = XMLFile.create("animalNamesXML", filename, "animalNames")
+    if not xmlFile then
+        print("[RAN] Failed to create XML file")
         return false
     end
     
@@ -690,28 +770,19 @@ function RealisticAnimalNames:saveToSavegame()
         if name and name ~= "" then
             local key = string.format("animalNames.animal(%d)", index)
             xmlFile:setValue(key .. "#id", animalId)
-            xmlFile:setValue(key .. "#name", name)
+            xmlFile:setValue(key, name) -- Store name as element value
             index = index + 1
         end
     end
     
-    -- Save version info
-    xmlFile:setValue("animalNames#version", "2.1.0.0")
+    xmlFile:setValue("animalNames#version", "2.2.0.0")
     xmlFile:setValue("animalNames#count", index)
     
     xmlFile:save()
     xmlFile:delete()
     
-    print(string.format("[RealisticAnimalNames] Saved %d animal names", index))
+    self:log("Saved", index, "animal names")
     return true
-end
-
----Get savegame file path
-function RealisticAnimalNames:getSavegameFilePath()
-    if self.mission.missionInfo and self.mission.missionInfo.savegameDirectory then
-        return self.mission.missionInfo.savegameDirectory .. "/" .. SAVE_FILE_NAME
-    end
-    return nil
 end
 
 ---Load animal names from savegame
@@ -720,25 +791,23 @@ function RealisticAnimalNames:loadFromSavegame()
     
     local filename = self:getSavegameFilePath()
     if not filename or not fileExists(filename) then
-        print("[RealisticAnimalNames] No existing savegame data found")
+        self:log("No existing savegame data found")
         return
     end
     
     local xmlFile = XMLFile.load("animalNamesXML", filename)
     if not xmlFile then
-        print("[RealisticAnimalNames] Failed to load savegame data")
+        print("[RAN] Failed to load savegame data")
         return
     end
     
-    -- Clear existing data
     self.animalNames = {}
     
-    -- Load animal names
     local index = 0
     while true do
         local key = string.format("animalNames.animal(%d)", index)
         local animalId = xmlFile:getValue(key .. "#id")
-        local name = xmlFile:getValue(key .. "#name")
+        local name = xmlFile:getValue(key)
         
         if not animalId then
             break
@@ -754,10 +823,22 @@ function RealisticAnimalNames:loadFromSavegame()
     local version = xmlFile:getValue("animalNames#version") or "1.0.0"
     xmlFile:delete()
     
-    print(string.format("[RealisticAnimalNames] Loaded %d animal names (v%s)", index, version))
+    self:log("Loaded", index, "animal names (v" .. version .. ")")
 end
 
----PERFORMANCE OPTIMIZATION: Draw floating name tags
+---Get savegame file path
+function RealisticAnimalNames:getSavegameFilePath()
+    if self.mission.missionInfo and self.mission.missionInfo.savegameDirectory then
+        return self.mission.missionInfo.savegameDirectory .. "/" .. SAVE_FILE_NAME
+    end
+    return nil
+end
+
+-- ============================================================================
+-- RENDERING (FLOATING NAMES)
+-- ============================================================================
+
+---Draw floating name tags (frame-sliced for performance)
 function RealisticAnimalNames:draw()
     if not self.isInitialized or not self.settings.showNames then
         return
@@ -772,25 +853,30 @@ function RealisticAnimalNames:draw()
     
     local camX, camY, camZ = getWorldTranslation(camera)
     local maxDistance = self.settings.nameDistance
+    local maxDistSq = maxDistance * maxDistance
     
-    -- Set text rendering properties once
+    -- Set text rendering properties
     setTextAlignment(RenderText.ALIGN_CENTER)
     setTextVerticalAlignment(RenderText.VERTICAL_ALIGN_MIDDLE)
     setTextBold(true)
     
-    -- PERFORMANCE: Only render a subset of animals per frame
-    -- Spread rendering across frames to avoid FPS drops
+    -- Frame-sliced rendering
     local animalsRendered = 0
-    local startIndex = self.animalUpdateIndex
+    local clusters = self.mission.animalSystem.clusters
     
-    -- Iterate through clusters with frame-slicing
-    for idx = startIndex, #self.mission.animalSystem.clusters do
+    -- Reset index if needed
+    if self.animalUpdateIndex > #clusters then
+        self.animalUpdateIndex = 1
+    end
+    
+    -- Process clusters in slices
+    for idx = self.animalUpdateIndex, #clusters do
         if animalsRendered >= PERFORMANCE_MAX_ANIMALS_PER_FRAME then
             self.animalUpdateIndex = idx
             break
         end
         
-        local cluster = self.mission.animalSystem.clusters[idx]
+        local cluster = clusters[idx]
         if cluster and cluster.animals then
             for _, animal in pairs(cluster.animals) do
                 if animalsRendered >= PERFORMANCE_MAX_ANIMALS_PER_FRAME then
@@ -798,7 +884,7 @@ function RealisticAnimalNames:draw()
                 end
                 
                 if self:isValidAnimal(animal) then
-                    -- Fast path: use cache if available
+                    -- Get name (use cache for speed)
                     local name
                     if animal.nodeId and self.nameCache[animal.nodeId] then
                         name = self.nameCache[animal.nodeId]
@@ -811,28 +897,23 @@ function RealisticAnimalNames:draw()
                     end
                     
                     if name and name ~= "" then
-                        -- Get animal position
                         local x, y, z = getWorldTranslation(animal.nodeId)
                         
-                        -- OPTIMIZATION: Quick distance check (no sqrt)
+                        -- Quick distance check
                         local dx, dy, dz = camX - x, camY - y, camZ - z
                         local distSq = dx*dx + dy*dy + dz*dz
-                        local maxDistSq = maxDistance * maxDistance
                         
                         if distSq < maxDistSq then
                             local distance = math.sqrt(distSq)
-                            
-                            -- Calculate display position
                             local displayY = y + self.settings.nameHeight
                             
-                            -- Alpha based on distance
+                            -- Alpha fade with distance
                             local alpha = 1.0 - (distance / maxDistance)
                             alpha = math.max(0.3, math.min(1.0, alpha))
                             
-                            -- Scale based on distance (slightly larger when farther)
+                            -- Scale with distance (slightly larger when farther)
                             local scale = self.settings.fontSize * (1.0 + (distance / maxDistance) * 0.5)
                             
-                            -- Render
                             setTextColor(1, 1, 1, alpha)
                             renderText3D(x, displayY, z, 0, 0, 0, scale, name)
                             
@@ -844,17 +925,16 @@ function RealisticAnimalNames:draw()
         end
     end
     
-    -- Reset update index for next frame
-    if self.animalUpdateIndex >= #self.mission.animalSystem.clusters then
-        self.animalUpdateIndex = 1
-    end
-    
     -- Reset text properties
     setTextAlignment(RenderText.ALIGN_LEFT)
     setTextVerticalAlignment(RenderText.VERTICAL_ALIGN_BASELINE)
     setTextBold(false)
     setTextColor(1, 1, 1, 1)
 end
+
+-- ============================================================================
+-- UPDATE LOOP
+-- ============================================================================
 
 ---Update (called every frame)
 function RealisticAnimalNames:update(dt)
@@ -871,11 +951,20 @@ function RealisticAnimalNames:update(dt)
             self.savePending = false
         end
     end
+    
+    -- Handle sync timeout
+    if self.syncRequested then
+        self.syncRequestTimer = self.syncRequestTimer - dt
+        if self.syncRequestTimer <= 0 then
+            self.syncRequested = false
+            self:log("Sync request timed out")
+        end
+    end
 end
 
 ---Called when mission is being deleted
 function RealisticAnimalNames:onMissionDelete()
-    print("[RealisticAnimalNames] Cleaning up...")
+    self:log("Cleaning up...")
     
     -- Final save
     if self.isServer and self.savePending then
@@ -897,12 +986,16 @@ function RealisticAnimalNames:onMissionDelete()
     self.isInitialized = false
     self.dialogLoaded = false
     
-    print("[RealisticAnimalNames] Cleanup complete")
+    self:log("Cleanup complete")
 end
 
----Show a localized notification
+-- ============================================================================
+-- UTILITIES
+-- ============================================================================
+
+---Show localized notification
 function RealisticAnimalNames:showNotification(textKey, notificationType)
-    if not self.isClient then return end
+    if not self.isClient or not self.i18n then return end
     
     local text = self.i18n:getText(textKey)
     if text and text ~= "" and text ~= textKey then
@@ -910,12 +1003,34 @@ function RealisticAnimalNames:showNotification(textKey, notificationType)
     end
 end
 
----Get animal name by ID (API for other mods)
+---Show notification with parameter
+function RealisticAnimalNames:showNotificationWithParam(textKey, param, notificationType)
+    if not self.isClient or not self.i18n then return end
+    
+    local text = self.i18n:getText(textKey)
+    if text and text ~= "" and text ~= textKey then
+        local formatted = text:format(param)
+        g_currentMission:addIngameNotification(notificationType or FSBaseMission.INGAME_NOTIFICATION_INFO, formatted)
+    end
+end
+
+---Log debug message
+function RealisticAnimalNames:log(...)
+    if self.debug then
+        print("[RAN]", ...)
+    end
+end
+
+-- ============================================================================
+-- API FOR OTHER MODS
+-- ============================================================================
+
+---Get animal name by ID
 function RealisticAnimalNames:getAnimalName(animalId)
     return self.animalNames[animalId]
 end
 
----Get all animal names (API for other mods)
+---Get all animal names
 function RealisticAnimalNames:getAllAnimalNames()
     local copy = {}
     for k, v in pairs(self.animalNames) do
@@ -924,52 +1039,18 @@ function RealisticAnimalNames:getAllAnimalNames()
     return copy
 end
 
----Clear all animal names
-function RealisticAnimalNames:clearAllAnimalNames()
-    if not self.isServer then
-        -- Client: request server to clear all
-        if self.isMultiplayer then
-            -- Request each name to be cleared
-            for animalId, _ in pairs(self.animalNames) do
-                self:requestNameChange(animalId, "")
-            end
-        end
-        return
-    end
-    
-    self.animalNames = {}
-    self.nameCache = {}
-    
-    self:scheduleSave()
-    self:showNotification("ran_notification_allNamesCleared", FSBaseMission.INGAME_NOTIFICATION_OK)
-    
-    -- Broadcast to clients
-    if self.isMultiplayer then
-        for animalId, _ in pairs(self.animalNames) do
-            self:broadcastNameChange(animalId, "")
-        end
-    end
+---Get animal name by node ID (for mod integration)
+function RealisticAnimalNames:getNameByNodeId(nodeId)
+    return self.nameCache[nodeId]
 end
 
 -- ============================================================================
--- Network Event Definitions
+-- GLOBAL REGISTRATION (FS25 Standard)
 -- ============================================================================
-
-NetworkEventType = NetworkEventType or {}
-NetworkEventType.RAN_REQUEST_NAME_CHANGE = "RAN_REQUEST_NAME_CHANGE"
-NetworkEventType.RAN_NAME_CHANGED = "RAN_NAME_CHANGED"
-NetworkEventType.RAN_REQUEST_SYNC = "RAN_REQUEST_SYNC"
-
--- ============================================================================
--- Global Registration
--- ============================================================================
-
----FS25 Mod System Integration
----This is the standard way FS25 loads mods
 
 local modInstance = nil
 
----@param mission table Mission instance
+---Register mod with mission
 local function registerMod(mission)
     if modInstance then
         removeModEventListener(modInstance)
@@ -986,10 +1067,10 @@ local function registerMod(mission)
     )
     
     addModEventListener(modInstance)
-    print("[RealisticAnimalNames] Registered with mission")
+    print("[RAN] Registered with mission")
 end
 
----@param mission table Mission instance
+---Unregister mod
 local function unregisterMod(mission)
     if modInstance then
         removeModEventListener(modInstance)
@@ -997,11 +1078,11 @@ local function unregisterMod(mission)
             modInstance:onMissionDelete()
         end
         modInstance = nil
-        print("[RealisticAnimalNames] Unregistered")
+        print("[RAN] Unregistered")
     end
 end
 
--- Hook into mission lifecycle using standard FS25 pattern
+-- Hook into mission lifecycle
 FSBaseMission.onMissionLoaded = Utils.appendedFunction(FSBaseMission.onMissionLoaded, function(mission)
     registerMod(mission)
 end)
@@ -1022,7 +1103,7 @@ FSBaseMission.draw = function(self, ...)
             modInstance:draw()
         end)
         if not success then
-            print("[RealisticAnimalNames] Draw error:", err)
+            print("[RAN] Draw error:", err)
         end
     end
 end
@@ -1039,9 +1120,9 @@ FSBaseMission.update = function(self, dt, ...)
             modInstance:update(dt)
         end)
         if not success then
-            print("[RealisticAnimalNames] Update error:", err)
+            print("[RAN] Update error:", err)
         end
     end
 end
 
-print("[RealisticAnimalNames] Mod initialized successfully")
+print("[RAN] Mod initialized successfully (v2.2.0.0)")

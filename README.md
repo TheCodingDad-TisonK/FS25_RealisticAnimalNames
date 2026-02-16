@@ -1,19 +1,36 @@
 # Realistic Animal Names for Farming Simulator 25
 
-A comprehensive mod that allows you to give custom names to your animals with floating name tags displayed above them.
+**Version: 2.2.0.0** | **Author: TisonK** | **Category: Animals, Gameplay**
 
-## Features
+A comprehensive mod that allows you to give custom names to your animals with floating name tags displayed above them. Built with performance and multiplayer compatibility in mind.
+
+## 🎯 Features
 
 - **Custom Animal Names**: Give each animal a unique, personalized name
-- **Floating Name Tags**: Names appear above animals in 3D space
-- **Distance-Based Display**: Names automatically scale and fade based on your distance
+- **Floating Name Tags**: Names appear above animals with distance-based scaling
+- **UTF-8 Support**: Full international characters and emoji support 🐄🐷🐔
 - **Configurable Settings**: Adjust visibility, distance, height, and font size
 - **Keybind Support**: Quick access with customizable keybind (default: K)
 - **Per-Savegame Storage**: Each save has its own set of animal names
-- **Multiplayer Compatible**: Works in multiplayer sessions
-- **Integrated Settings**: All settings accessible through the game's settings menu
+- **Multiplayer Compatible**: Full network synchronization (v2.2.0 enhanced!)
+- **Integrated Settings**: All settings accessible through game's settings menu
+- **Performance Optimized**: Smart culling and frame-sliced rendering
+- **API Support**: Other mods can read/write animal names
 
-## Installation
+## 🌐 Multiplayer (Enhanced in v2.2.0!)
+
+The mod features **full multiplayer synchronization** with improvements:
+
+- ✅ Names set by any player are visible to all players instantly
+- ✅ Server-authoritative save system (no conflicts)
+- ✅ Sync confirmation for clients
+- ✅ Automatic sync when clients join
+- ✅ Timeout protection and error recovery
+- ✅ Reduced network traffic
+
+**Note**: Only the server host needs to have the mod installed. Clients will automatically receive the mod data when connecting.
+
+## 📥 Installation
 
 1. Download the mod ZIP file
 2. Place it in your FS25 mods folder:
@@ -22,13 +39,13 @@ A comprehensive mod that allows you to give custom names to your animals with fl
 3. Launch Farming Simulator 25
 4. Activate the mod in the mod selection screen
 
-## Usage
+## 🎮 Usage
 
 ### Naming Animals
 
 1. Walk close to an animal (within 15 meters by default)
 2. Press **K** (or your configured keybind)
-3. Enter the desired name in the dialog box
+3. Enter the desired name in the dialog box (supports UTF-8 characters)
 4. Click **Apply** to save the name
 
 ### Resetting Names
@@ -51,49 +68,7 @@ Access the mod settings through the game's settings menu:
 2. Find "Open Animal Naming UI" under the MOD category
 3. Assign your preferred key
 
-## File Structure
-
-```
-FS25_RealisticAnimalNames/
-├── modDesc.xml                   # Mod description and configuration
-├── icon.dds                      # Mod icon (512x512)
-├── src/
-│   └── RealisticAnimalNames.lua  # Main mod script
-└── gui/
-    └── AnimalNamesDialog.xml     # UI dialog definition
-```
-
-## Technical Details
-
-### Settings Storage
-
-- Global settings are stored in the game's settings system
-- Animal names are saved per-savegame in: `savegame/realisticAnimalNames.xml`
-
-### Supported Animals
-
-Works with all animal types in FS25:
-- Cows
-- Pigs
-- Chickens
-- Sheep
-- Horses
-- And any future animal types
-
-### Performance
-
-- Optimized rendering only shows names within configured distance
-- Distance-based scaling prevents performance issues with many animals
-- Minimal impact on frame rate
-
-## Compatibility
-
-- **FS25 Version**: 1.4+
-- **Multiplayer**: Yes, fully supported
-- **Conflicts**: None known
-
-## Troubleshooting
-
+### ❓ Troubleshooting
 **Names not appearing:**
 - Check if "Show Animal Names" is enabled in settings
 - Ensure you're within the display distance
@@ -104,44 +79,38 @@ Works with all animal types in FS25:
 - Check your keybind settings
 - Restart the game if issues persist
 
-**Names not saving:**
-- Ensure the mod has write permissions to your savegame folder
-- Check that you clicked "Apply" when setting names
+**Multiplayer sync issues:**
+- Ensure all players have the same mod version
+- Server host should load the save first
+- Rejoin if names don't appear after 10 seconds
 
-## Credits
+### 📜 Changelog
+## Version 2.2.0.0
+- Enhanced multiplayer sync with timeout protection
+- Full UTF-8 support (international characters, emoji)
+- UI improvements: character counter, better keyboard navigation
+- Added 3 new languages (Hungarian, Dutch, Romanian)
+- Performance optimizations
+- Bug fixes and stability improvements
 
-- **Author**: YourName
-- **Version**: 2.0.0.0
-- **Category**: Animals, Gameplay
-- **Mod Hub Compatible**: Yes
+## Version 2.1.0.0
+Full multiplayer synchronization
 
-## Changelog
+Performance optimizations
 
-### Version 2.0.0.0
-- Complete rewrite for FS25
-- Integrated settings system
-- Improved UI with proper FS25 styling
-- Distance-based name scaling
-- Better performance optimization
-- Enhanced multiplayer support
-- Proper keybind integration
+Memory leak fixes
 
-### Version 1.1.0.0
-- Initial FS25 port
-- Basic naming functionality
-- Simple GUI
+Version 2.0.0.0
+Complete rewrite for FS25
 
-## License
+Integrated settings system
 
+Improved UI with proper FS25 styling
+
+### 📄 License
 This mod is provided as-is for use in Farming Simulator 25. You are free to modify it for personal use but please credit the original author if sharing modified versions.
 
-## Support
-
-For bug reports, feature requests, or general support:
-- Check the mod comments on ModHub
-- Visit the FS25 modding community forums
-- Contact the author
-
----
+### 🙏 Credits
+Author: TisonK
 
 **Enjoy naming your animals!** 🐄🐷🐔

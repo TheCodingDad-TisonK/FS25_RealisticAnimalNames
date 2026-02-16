@@ -1,9 +1,6 @@
 -- ============================================================================
--- Animal Names Dialog - GUI Controller
+-- Animal Names Dialog - GUI Controller v2.2.0.0
 -- FS25 Realistic Animal Names
--- Version: 2.1.0.0
--- ============================================================================
--- COMPLETE REWRITE: Fixed focus, UTF-8, error handling
 -- ============================================================================
 
 ---@class AnimalNamesDialog
@@ -24,10 +21,12 @@ function AnimalNamesDialog:new(target)
     self.cancelButton = nil
     self.titleText = nil
     self.nameLabel = nil
+    self.charCounter = nil
     
     -- State
     self.isOpen = false
     self.originalName = ""
+    self.modInstance = target
     
     -- Pre-bound callbacks for performance
     self._boundOnClickApply = function() self:onClickApply() end
@@ -45,13 +44,14 @@ end
 function AnimalNamesDialog:onCreate(element)
     DialogElement.onCreate(self, element)
     
-    -- Get all UI element references with error checking
+    -- Get all UI element references safely
     self.nameInput = self:getElement("nameInput")
     self.applyButton = self:getElement("applyButton")
     self.resetButton = self:getElement("resetButton")
     self.cancelButton = self:getElement("cancelButton")
     self.titleText = self:getElement("titleText")
     self.nameLabel = self:getElement("nameLabel")
+    self.charCounter = self:getElement("charCounter")
     
     -- Set up button callbacks
     if self.applyButton then
@@ -71,12 +71,15 @@ function AnimalNamesDialog:onCreate(element)
         self.nameInput:setCallback("onEnterPressedCallback", self._boundOnEnterPressed)
         self.nameInput:setCallback("onEscPressedCallback", self._boundOnEscPressed)
         self.nameInput:setCallback("onTextChangedCallback", self._boundOnTextChanged)
+        
+        -- Enable UTF-8 input
+        self.nameInput:setValidCharacters("ALL")
     end
     
-    -- Apply localization to dynamic text
+    -- Apply localization
     self:applyLocalization()
     
-    print("[AnimalNamesDialog] Created")
+    print("[RAN Dialog] Created")
 end
 
 ---Safely get an element by name
@@ -96,9 +99,9 @@ end
 
 ---Apply localization to static UI text
 function AnimalNamesDialog:applyLocalization()
-    if not self.target or not self.target.i18n then return end
+    if not self.modInstance or not self.modInstance.i18n then return end
     
-    local i18n = self.target.i18n
+    local i18n = self.modInstance.i18n
     
     -- Set title text
     if self.titleText then
@@ -134,17 +137,16 @@ function AnimalNamesDialog:onOpen()
     DialogElement.onOpen(self)
     self.isOpen = true
     
-    -- Focus on text input after a short delay to ensure UI is ready
+    -- Focus on text input after a short delay
     self:scheduleFocusInput()
     
-    print("[AnimalNamesDialog] Opened")
+    print("[RAN Dialog] Opened")
 end
 
 ---Schedule focus on input element
 function AnimalNamesDialog:scheduleFocusInput()
     if not self.nameInput then return end
     
-    -- Use timer to defer focus (FS25 needs this sometimes)
     local function setFocusDelayed()
         if self.isOpen and self.nameInput then
             FocusManager:setFocus(self.nameInput)
@@ -152,7 +154,6 @@ function AnimalNamesDialog:scheduleFocusInput()
             -- Select all text for easy editing
             local text = self.nameInput:getText()
             if text and text ~= "" then
-                -- UTF-8 safe length calculation
                 local len = self:utf8len(text)
                 if len > 0 then
                     self.nameInput:setSelection(0, len)
@@ -164,7 +165,7 @@ function AnimalNamesDialog:scheduleFocusInput()
     g_currentMission:addUpdateCallback(setFocusDelayed)
 end
 
----UTF-8 string length (handles multibyte characters)
+---UTF-8 string length
 function AnimalNamesDialog:utf8len(str)
     if not str then return 0 end
     
@@ -182,36 +183,55 @@ function AnimalNamesDialog:onClose()
     self.animal = nil
     self.originalName = ""
     
-    print("[AnimalNamesDialog] Closed")
+    print("[RAN Dialog] Closed")
 end
 
 ---Set the animal to name
 ---@param animal table The animal object
----@param currentName string The current name of the animal
+---@param currentName string The current name
 function AnimalNamesDialog:setAnimal(animal, currentName)
     self.animal = animal
     self.originalName = currentName or ""
     
     if self.nameInput then
         self.nameInput:setText(currentName or "")
+        self:updateCharCounter(currentName or "")
     end
     
-    -- Update animal info if we have additional display
-    if self.titleText and animal then
-        -- Could show animal type in title
-        local title = self.target.i18n:getText("ran_ui_title")
-        self.titleText:setText(title)
-    end
-    
-    -- Enable/disable reset button based on whether there's a name
+    -- Update reset button state
     if self.resetButton then
         self.resetButton:setDisabled(currentName == nil or currentName == "")
+    end
+    
+    -- Update apply button state
+    if self.applyButton then
+        self.applyButton:setDisabled(true) -- Initially disabled until change
+    end
+end
+
+---Update character counter
+function AnimalNamesDialog:updateCharCounter(text)
+    if not self.charCounter then return end
+    
+    local len = self:utf8len(text)
+    local maxLen = 30
+    self.charCounter:setText(string.format("%d/%d", len, maxLen))
+    
+    -- Change color if approaching limit
+    if len >= maxLen then
+        self.charCounter:setTextColor(1, 0, 0, 1) -- Red
+    elseif len >= maxLen - 5 then
+        self.charCounter:setTextColor(1, 1, 0, 1) -- Yellow
+    else
+        self.charCounter:setTextColor(0.8, 0.8, 0.8, 1) -- Gray
     end
 end
 
 ---Text changed callback
 function AnimalNamesDialog:onTextChanged(text)
-    -- Enable apply button only if text changed
+    self:updateCharCounter(text)
+    
+    -- Enable apply button only if text changed and not empty?
     if self.applyButton then
         local isChanged = (text ~= self.originalName)
         self.applyButton:setDisabled(not isChanged)
@@ -224,7 +244,7 @@ function AnimalNamesDialog:onTextChanged(text)
     end
 end
 
----Apply button clicked - save the name
+---Apply button clicked
 function AnimalNamesDialog:onClickApply()
     if not self:validateState() then return end
     
@@ -233,51 +253,46 @@ function AnimalNamesDialog:onClickApply()
         newName = self.nameInput:getText() or ""
     end
     
-    -- Call the mod's setAnimalName function
     local success, result = pcall(function()
-        return self.target:setAnimalName(self.animal, newName)
+        return self.modInstance:setAnimalName(self.animal, newName)
     end)
     
     if success and result then
         self:close()
     else
-        print("[AnimalNamesDialog] Failed to set animal name")
-        -- Show error notification
-        if self.target.showNotification then
-            self.target:showNotification("ran_notification_error", FSBaseMission.INGAME_NOTIFICATION_ERROR)
-        end
+        print("[RAN Dialog] Failed to set animal name")
     end
 end
 
----Reset button clicked - remove the name
+---Reset button clicked
 function AnimalNamesDialog:onClickReset()
     if not self:validateState() then return end
     
     local success, result = pcall(function()
-        return self.target:resetAnimalName(self.animal)
+        return self.modInstance:resetAnimalName(self.animal)
     end)
     
     if success and result then
         self:close()
     else
-        print("[AnimalNamesDialog] Failed to reset animal name")
+        print("[RAN Dialog] Failed to reset animal name")
     end
 end
 
----Cancel button clicked - close without saving
+---Cancel button clicked
 function AnimalNamesDialog:onClickCancel()
     self:close()
 end
 
----Validate that dialog has required references
+---Validate dialog state
 function AnimalNamesDialog:validateState()
-    if not self.target then
-        print("[AnimalNamesDialog] ERROR: No target mod reference")
+    if not self.modInstance then
+        print("[RAN Dialog] ERROR: No mod instance")
         return false
     end
     
     if not self.animal then
-        print("[AnimalNamesDialog] ERROR: No animal selected")
+        print("[RAN Dialog] ERROR: No animal selected")
         return false
     end
     
@@ -286,7 +301,6 @@ end
 
 ---Handle Enter key press
 function AnimalNamesDialog:onEnterPressed()
-    -- Only trigger if apply button is enabled
     if self.applyButton and not self.applyButton:getDisabled() then
         self:onClickApply()
     end
@@ -297,14 +311,6 @@ end
 function AnimalNamesDialog:onEscPressed()
     self:onClickCancel()
     return true
-end
-
----Called after GUI setup is finished
-function AnimalNamesDialog:onGuiSetupFinished()
-    DialogElement.onGuiSetupFinished(self)
-    
-    -- Final localization pass
-    self:applyLocalization()
 end
 
 ---Clean up resources
@@ -323,9 +329,10 @@ function AnimalNamesDialog:delete()
     self.cancelButton = nil
     self.titleText = nil
     self.nameLabel = nil
+    self.charCounter = nil
     self.animal = nil
     
     DialogElement.delete(self)
     
-    print("[AnimalNamesDialog] Deleted")
+    print("[RAN Dialog] Deleted")
 end

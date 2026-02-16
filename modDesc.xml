@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8" standalone="no" ?>
 <modDesc descVersion="105">
     <author>TisonK</author>
-    <version>2.1.0.0</version>
+    <version>2.2.0.0</version>
     
     <title>
         <en>Realistic Animal Names</en>
@@ -14,6 +14,9 @@
         <br>Nomes Realistas de Animais</br>
         <uk>Реалістичні Імена Тварин</uk>
         <ru>Реалистичные Имена Животных</ru>
+        <hu>Realista Állatnevek</hu>
+        <nl>Realistische Dierennamen</nl>
+        <ro>Nume Realiste pentru Animale</ro>
     </title>
 
     <description>
@@ -26,17 +29,19 @@ Features:
 • Toggle visibility in settings menu
 • Per-savegame name storage
 • Keybind support (default: K)
-• Multiplayer compatible
+• Full multiplayer synchronization (v2.2.0+)
+• API for other mods to read/write names
 
 Usage:
-1. Walk near an animal
+1. Walk near an animal (within configurable distance)
 2. Press K to open naming dialog
-3. Enter custom name
+3. Enter custom name (supports UTF-8 characters)
 4. Adjust settings in game settings menu
 
-All names are saved per savegame and persist between sessions.]]></en>
-        <de><![CDATA[Fügen Sie Ihren Tieren benutzerdefinierte Namen mit schwebenden Namensschildern hinzu.]]></de>
-        <fr><![CDATA[Ajoutez des noms personnalisés à vos animaux avec des étiquettes flottantes.]]></fr>
+All names are saved per savegame and sync across all players in multiplayer.]]></en>
+        <de><![CDATA[Fügen Sie Ihren Tieren benutzerdefinierte Namen mit schwebenden Namensschildern hinzu. Perfekte Multiplayer-Synchronisierung.]]></de>
+        <fr><![CDATA[Ajoutez des noms personnalisés à vos animaux avec des étiquettes flottantes. Synchronisation multijoueur parfaite.]]></fr>
+        <es><![CDATA[Añade nombres personalizados a tus animales con etiquetas flotantes. Sincronización multijugador perfecta.]]></es>
     </description>
 
     <iconFilename>icon.dds</iconFilename>
@@ -44,26 +49,26 @@ All names are saved per savegame and persist between sessions.]]></en>
 
     <!-- Settings integrated with game settings menu -->
     <settings>
-        <setting name="showNames" 
+        <setting name="ran_showNames" 
                  title="ran_setting_showNames" 
                  type="bool" 
                  default="true" />
         
-        <setting name="nameDistance" 
+        <setting name="ran_nameDistance" 
                  title="ran_setting_nameDistance" 
                  type="float" 
                  default="15" 
                  min="5" 
                  max="50" />
         
-        <setting name="nameHeight" 
+        <setting name="ran_nameHeight" 
                  title="ran_setting_nameHeight" 
                  type="float" 
                  default="1.8" 
                  min="0.5" 
                  max="3.0" />
         
-        <setting name="fontSize" 
+        <setting name="ran_fontSize" 
                  title="ran_setting_fontSize" 
                  type="float" 
                  default="0.018" 
@@ -99,6 +104,9 @@ All names are saved per savegame and persist between sessions.]]></en>
             <br>Mostrar nomes de animais</br>
             <uk>Показати імена тварин</uk>
             <ru>Показывать имена животных</ru>
+            <hu>Állatnevek mutatása</hu>
+            <nl>Dierennamen weergeven</nl>
+            <ro>Afișează numele animalelor</ro>
         </text>
         
         <text name="ran_setting_nameDistance">
@@ -112,6 +120,9 @@ All names are saved per savegame and persist between sessions.]]></en>
             <br>Distância de exibição de nomes (metros)</br>
             <uk>Відстань показу імен (метри)</uk>
             <ru>Дистанция отображения имен (метры)</ru>
+            <hu>Név megjelenítési távolság (méter)</hu>
+            <nl>Naam weergave afstand (meter)</nl>
+            <ro>Distanța de afișare a numelui (metri)</ro>
         </text>
         
         <text name="ran_setting_nameHeight">
@@ -125,6 +136,9 @@ All names are saved per savegame and persist between sessions.]]></en>
             <br>Altura do nome acima do animal (metros)</br>
             <uk>Висота імені над твариною (метри)</uk>
             <ru>Высота имени над животным (метры)</ru>
+            <hu>Név magasság az állat felett (méter)</hu>
+            <nl>Naam hoogte boven dier (meter)</nl>
+            <ro>Înălțimea numelui deasupra animalului (metri)</ro>
         </text>
         
         <text name="ran_setting_fontSize">
@@ -138,6 +152,9 @@ All names are saved per savegame and persist between sessions.]]></en>
             <br>Tamanho da fonte dos nomes</br>
             <uk>Розмір шрифту імен</uk>
             <ru>Размер шрифта имен</ru>
+            <hu>Betűméret</hu>
+            <nl>Lettergrootte</nl>
+            <ro>Mărimea fontului</ro>
         </text>
 
         <!-- UI Elements -->
@@ -152,6 +169,9 @@ All names are saved per savegame and persist between sessions.]]></en>
             <br>Gerenciador de nomes de animais</br>
             <uk>Менеджер імен тварин</uk>
             <ru>Менеджер имен животных</ru>
+            <hu>Állatnév kezelő</hu>
+            <nl>Diernaam beheerder</nl>
+            <ro>Manager nume animale</ro>
         </text>
         
         <text name="ran_ui_nameLabel">
@@ -165,6 +185,9 @@ All names are saved per savegame and persist between sessions.]]></en>
             <br>Nome do animal:</br>
             <uk>Ім'я тварини:</uk>
             <ru>Имя животного:</ru>
+            <hu>Állat neve:</hu>
+            <nl>Diernaam:</nl>
+            <ro>Numele animalului:</ro>
         </text>
         
         <text name="ran_ui_placeholder">
@@ -178,6 +201,9 @@ All names are saved per savegame and persist between sessions.]]></en>
             <br>Digite o nome...</br>
             <uk>Введіть ім'я...</uk>
             <ru>Введите имя...</ru>
+            <hu>Írja be a nevet...</hu>
+            <nl>Voer naam in...</nl>
+            <ro>Introduceți numele...</ro>
         </text>
         
         <text name="ran_button_apply">
@@ -191,6 +217,9 @@ All names are saved per savegame and persist between sessions.]]></en>
             <br>Aplicar</br>
             <uk>Застосувати</uk>
             <ru>Применить</ru>
+            <hu>Alkalmaz</hu>
+            <nl>Toepassen</nl>
+            <ro>Aplică</ro>
         </text>
         
         <text name="ran_button_reset">
@@ -204,6 +233,9 @@ All names are saved per savegame and persist between sessions.]]></en>
             <br>Redefinir</br>
             <uk>Скинути</uk>
             <ru>Сбросить</ru>
+            <hu>Visszaállítás</hu>
+            <nl>Resetten</nl>
+            <ro>Resetează</ro>
         </text>
         
         <text name="ran_button_cancel">
@@ -217,6 +249,9 @@ All names are saved per savegame and persist between sessions.]]></en>
             <br>Cancelar</br>
             <uk>Скасувати</uk>
             <ru>Отмена</ru>
+            <hu>Mégse</hu>
+            <nl>Annuleren</nl>
+            <ro>Anulează</ro>
         </text>
 
         <!-- Notifications -->
@@ -231,6 +266,9 @@ All names are saved per savegame and persist between sessions.]]></en>
             <br>Nomes Realistas de Animais carregado! Pressione K perto de um animal para renomeá-lo.</br>
             <uk>Реалістичні Імена Тварин завантажено! Натисніть K біля тварини, щоб перейменувати її.</uk>
             <ru>Реалистичные Имена Животных загружено! Нажмите K рядом с животным, чтобы переименовать его.</ru>
+            <hu>A Realista Állatnevek betöltve! Nyomja meg a K-t egy állat közelében az átnevezéshez.</hu>
+            <nl>Realistische Dierennamen geladen! Druk op K bij een dier om het te hernoemen.</nl>
+            <ro>Nume Realiste pentru Animale încărcat! Apăsați K lângă un animal pentru a-l redenumi.</ro>
         </text>
         
         <text name="ran_notification_noAnimal">
@@ -244,6 +282,9 @@ All names are saved per savegame and persist between sessions.]]></en>
             <br>Nenhum animal por perto. Aproxime-se de um animal.</br>
             <uk>Немає тварини поблизу. Підійдіть ближче до тварини.</uk>
             <ru>Нет животного поблизости. Подойдите ближе к животному.</ru>
+            <hu>Nincs állat a közelben. Menjen közelebb egy állathoz.</hu>
+            <nl>Geen dier in de buurt. Ga dichter bij een dier staan.</nl>
+            <ro>Niciun animal în apropiere. Apropiați-vă de un animal.</ro>
         </text>
         
         <text name="ran_notification_nameSet">
@@ -257,6 +298,9 @@ All names are saved per savegame and persist between sessions.]]></en>
             <br>Nome do animal definido como: %s</br>
             <uk>Ім'я тварини встановлено на: %s</uk>
             <ru>Имя животного установлено на: %s</ru>
+            <hu>Állat neve beállítva: %s</hu>
+            <nl>Diernaam ingesteld op: %s</nl>
+            <ro>Numele animalului setat la: %s</ro>
         </text>
         
         <text name="ran_notification_nameReset">
@@ -270,6 +314,9 @@ All names are saved per savegame and persist between sessions.]]></en>
             <br>Nome do animal redefinido para o padrão</br>
             <uk>Ім'я тварини скинуто на стандартне</uk>
             <ru>Имя животного сброшено на стандартное</ru>
+            <hu>Állat neve visszaállítva az alapértelmezettre</hu>
+            <nl>Diernaam teruggezet naar standaard</nl>
+            <ro>Numele animalului resetat la implicit</ro>
         </text>
         
         <text name="ran_notification_allNamesCleared">
@@ -283,6 +330,9 @@ All names are saved per savegame and persist between sessions.]]></en>
             <br>Todos os nomes de animais limpos</br>
             <uk>Усі імена тварин очищено</uk>
             <ru>Все имена животных очищены</ru>
+            <hu>Minden állatnév törölve</hu>
+            <nl>Alle dierennamen gewist</nl>
+            <ro>Toate numele animalelor au fost șterse</ro>
         </text>
 
         <!-- Input Action -->
@@ -297,6 +347,9 @@ All names are saved per savegame and persist between sessions.]]></en>
             <br>Abrir interface de nomeação de animais</br>
             <uk>Відкрити інтерфейс іменування тварин</uk>
             <ru>Открыть интерфейс именования животных</ru>
+            <hu>Állat elnevezési felület megnyitása</hu>
+            <nl>Open dier benoemingsinterface</nl>
+            <ro>Deschideți interfața de denumire a animalelor</ro>
         </text>
     </l10n>
 
