@@ -1,0 +1,58 @@
+name: Feature Request
+description: Suggest a new feature or improvement.
+labels: ["enhancement", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Before opening this request:**
+        - Check the roadmap in the README — your idea may already be planned.
+        - Check open issues to avoid duplicates.
+        - Keep requests scoped and specific. "More names" will be closed. "Add a Welsh name pack as a selectable option in settings" is actionable.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      description: Describe the situation or frustration this would address. Focus on the problem, not the solution.
+      placeholder: "I want to give my horses names from a specific culture but the current name list doesn't include them."
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed Solution
+      description: Describe what you want to happen. Be specific.
+      placeholder: "Add a Norse name pack for horses that can be enabled in the mod settings."
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+    validations:
+      required: false
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Which part of the mod does this relate to?
+      options:
+        - Animal Naming & Name Lists
+        - Naming Dialog / UI
+        - Name Generation & Randomization
+        - Save / Load Persistence
+        - Settings
+        - Mod Compatibility
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Anything Else?
+    validations:
+      required: false
