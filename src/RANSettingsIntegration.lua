@@ -1,3 +1,4 @@
+
 -- ============================================================================
 -- Realistic Animal Names - Settings Integration v2.2.0.0
 -- Injects mod settings into ESC > Settings > Game Settings
@@ -7,7 +8,7 @@
 RANSettingsIntegration = {}
 
 -- ============================================================================
--- Frame hook — fires when the settings page opens
+-- Frame hook - fires when the settings page opens
 -- ============================================================================
 
 function RANSettingsIntegration:onFrameOpen()
@@ -35,12 +36,18 @@ end
 -- ============================================================================
 
 function RANSettingsIntegration:addElements(frame)
-    -- Section header
+    -- Section header - wrapped in BitmapElement so setImageColor is available
+    -- on all direct gameSettingsLayout children (bare TextElement lacks it,
+    -- causing updateAlternatingElements to crash and rows to stay white)
+    local headerContainer = BitmapElement.new()
+    headerContainer:loadProfile(g_gui:getProfile("fs25_multiTextOptionContainer"), true)
     local header = TextElement.new()
     header:loadProfile(g_gui:getProfile("fs25_settingsSectionHeader"), true)
     header:setText(g_i18n:getText("ran_setting_section") or "Realistic Animal Names")
-    frame.gameSettingsLayout:addElement(header)
+    headerContainer:addElement(header)
     header:onGuiSetupFinished()
+    frame.gameSettingsLayout:addElement(headerContainer)
+    headerContainer:onGuiSetupFinished()
 
     -- Show Animal Names toggle
     frame.ran_showNamesToggle = RANSettingsIntegration:addBinaryOption(
@@ -103,7 +110,7 @@ function RANSettingsIntegration:updateGameSettings()
 end
 
 -- ============================================================================
--- Callbacks — fire when the player toggles a setting
+-- Callbacks - fire when the player toggles a setting
 -- ============================================================================
 
 function RANSettingsIntegration:onShowNamesChanged(state)
