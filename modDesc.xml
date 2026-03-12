@@ -68,12 +68,17 @@ All names are saved per savegame and sync across all players in multiplayer.]]><
                  min="0.5" 
                  max="3.0" />
         
-        <setting name="ran_fontSize" 
-                 title="ran_setting_fontSize" 
-                 type="float" 
-                 default="0.018" 
-                 min="0.010" 
+        <setting name="ran_fontSize"
+                 title="ran_setting_fontSize"
+                 type="float"
+                 default="0.018"
+                 min="0.010"
                  max="0.030" />
+
+        <setting name="ran_showDetails"
+                 title="ran_setting_showDetails"
+                 type="bool"
+                 default="true" />
     </settings>
 
     <!-- Input Actions -->
@@ -155,6 +160,70 @@ All names are saved per savegame and sync across all players in multiplayer.]]><
             <hu>Betűméret</hu>
             <nl>Lettergrootte</nl>
             <ro>Mărimea fontului</ro>
+        </text>
+
+        <text name="ran_setting_showDetails">
+            <en>Show Animal Details (Type &amp; Age)</en>
+            <de>Tierdetails anzeigen (Typ &amp; Alter)</de>
+            <fr>Afficher les détails (Type et Âge)</fr>
+            <pl>Pokaż szczegóły zwierząt (typ i wiek)</pl>
+            <es>Mostrar detalles del animal (tipo y edad)</es>
+            <it>Mostra dettagli animale (tipo ed età)</it>
+            <cz>Zobrazit detaily zvířat (typ a věk)</cz>
+            <br>Mostrar detalhes do animal (tipo e idade)</br>
+            <uk>Показати деталі тварини (тип і вік)</uk>
+            <ru>Показывать детали животного (тип и возраст)</ru>
+            <hu>Állat részletek mutatása (típus és kor)</hu>
+            <nl>Dierdetails weergeven (type en leeftijd)</nl>
+            <ro>Afișează detaliile animalului (tip și vârstă)</ro>
+        </text>
+
+        <text name="ran_age_newborn">
+            <en>Newborn</en>
+            <de>Neugeboren</de>
+            <fr>Nouveau-né</fr>
+            <pl>Noworodek</pl>
+            <es>Recién nacido</es>
+            <it>Neonato</it>
+            <cz>Novorozenec</cz>
+            <br>Recém-nascido</br>
+            <uk>Новонароджений</uk>
+            <ru>Новорождённый</ru>
+            <hu>Újszülött</hu>
+            <nl>Pasgeboren</nl>
+            <ro>Nou-născut</ro>
+        </text>
+
+        <text name="ran_age_months_fmt">
+            <en>%d mo</en>
+            <de>%d Mo.</de>
+            <fr>%d mo</fr>
+            <pl>%d mies.</pl>
+            <es>%d mes</es>
+            <it>%d mes</it>
+            <cz>%d měs.</cz>
+            <br>%d mês</br>
+            <uk>%d міс.</uk>
+            <ru>%d мес.</ru>
+            <hu>%d hó</hu>
+            <nl>%d mnd</nl>
+            <ro>%d luni</ro>
+        </text>
+
+        <text name="ran_age_years_fmt">
+            <en>%d yr</en>
+            <de>%d J.</de>
+            <fr>%d an</fr>
+            <pl>%d rok</pl>
+            <es>%d año</es>
+            <it>%d anno</it>
+            <cz>%d rok</cz>
+            <br>%d ano</br>
+            <uk>%d рік</uk>
+            <ru>%d г.</ru>
+            <hu>%d év</hu>
+            <nl>%d jr</nl>
+            <ro>%d ani</ro>
         </text>
 
         <!-- UI Elements -->
@@ -355,6 +424,7 @@ All names are saved per savegame and sync across all players in multiplayer.]]><
 
     <!-- Source Files -->
     <extraSourceFiles>
+        <sourceFile filename="src/events/RANNetworkEvents.lua" />
         <sourceFile filename="src/RealisticAnimalNames.lua" />
         <sourceFile filename="gui/AnimalNamesDialog.lua" />
     </extraSourceFiles>

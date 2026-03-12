@@ -143,26 +143,20 @@ function AnimalNamesDialog:onOpen()
     print("[RAN Dialog] Opened")
 end
 
----Schedule focus on input element
+---Focus the name input and select all existing text
 function AnimalNamesDialog:scheduleFocusInput()
     if not self.nameInput then return end
-    
-    local function setFocusDelayed()
-        if self.isOpen and self.nameInput then
-            FocusManager:setFocus(self.nameInput)
-            
-            -- Select all text for easy editing
-            local text = self.nameInput:getText()
-            if text and text ~= "" then
-                local len = self:utf8len(text)
-                if len > 0 then
-                    self.nameInput:setSelection(0, len)
-                end
-            end
+    if not self.isOpen then return end
+
+    FocusManager:setFocus(self.nameInput)
+
+    local text = self.nameInput:getText()
+    if text and text ~= "" then
+        local len = self:utf8len(text)
+        if len > 0 then
+            self.nameInput:setSelection(0, len)
         end
     end
-    
-    g_currentMission:addUpdateCallback(setFocusDelayed)
 end
 
 ---UTF-8 string length
