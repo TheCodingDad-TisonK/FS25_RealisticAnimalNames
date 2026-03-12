@@ -49,43 +49,44 @@ All names are saved per savegame and sync across all players in multiplayer.]]><
 
     <!-- Settings integrated with game settings menu -->
     <settings>
-        <setting name="ran_showNames" 
-                 title="ran_setting_showNames" 
-                 type="bool" 
+        <setting name="ran_showNames"
+                 title="ran_setting_showNames"
+                 type="checkbox"
                  default="true" />
-        
-        <setting name="ran_nameDistance" 
-                 title="ran_setting_nameDistance" 
-                 type="float" 
-                 default="15" 
-                 min="5" 
-                 max="50" />
-        
-        <setting name="ran_nameHeight" 
-                 title="ran_setting_nameHeight" 
-                 type="float" 
-                 default="1.8" 
-                 min="0.5" 
-                 max="3.0" />
-        
-        <setting name="ran_fontSize"
-                 title="ran_setting_fontSize"
-                 type="float"
-                 default="0.018"
-                 min="0.010"
-                 max="0.030" />
 
         <setting name="ran_showDetails"
                  title="ran_setting_showDetails"
-                 type="bool"
+                 type="checkbox"
                  default="true" />
+
+        <setting name="ran_nameDistance"
+                 title="ran_setting_nameDistance"
+                 type="slider"
+                 default="15"
+                 min="5"
+                 max="50"
+                 step="1" />
+
+        <setting name="ran_nameHeight"
+                 title="ran_setting_nameHeight"
+                 type="slider"
+                 default="1.8"
+                 min="0.5"
+                 max="3.0"
+                 step="0.1" />
+
+        <setting name="ran_fontSize"
+                 title="ran_setting_fontSize"
+                 type="slider"
+                 default="0.018"
+                 min="0.010"
+                 max="0.030"
+                 step="0.002" />
     </settings>
 
     <!-- Input Actions -->
     <actions>
-        <action name="RAN_OPEN_UI" 
-                category="VEHICLE" 
-                axisType="HALF" />
+        <action name="RAN_OPEN_UI" />
     </actions>
 
     <!-- Default Keybindings -->
