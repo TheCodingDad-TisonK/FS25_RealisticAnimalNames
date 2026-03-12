@@ -405,6 +405,23 @@ All names are saved per savegame and sync across all players in multiplayer.]]><
             <ro>Toate numele animalelor au fost șterse</ro>
         </text>
 
+        <!-- Settings section header -->
+        <text name="ran_setting_section">
+            <en>Realistic Animal Names</en>
+            <de>Realistische Tiernamen</de>
+            <fr>Noms d'Animaux Réalistes</fr>
+            <pl>Realistyczne Nazwy Zwierząt</pl>
+            <es>Nombres Realistas para Animales</es>
+            <it>Nomi Animali Realistici</it>
+            <cz>Realistická Jména Zvířat</cz>
+            <br>Nomes Realistas de Animais</br>
+            <uk>Реалістичні Імена Тварин</uk>
+            <ru>Реалистичные Имена Животных</ru>
+            <hu>Realista Állatnevek</hu>
+            <nl>Realistische Dierennamen</nl>
+            <ro>Nume Realiste pentru Animale</ro>
+        </text>
+
         <!-- Input Action -->
         <text name="input_RAN_OPEN_UI">
             <en>Open Animal Naming UI</en>
@@ -426,6 +443,7 @@ All names are saved per savegame and sync across all players in multiplayer.]]><
     <!-- Source Files -->
     <extraSourceFiles>
         <sourceFile filename="src/events/RANNetworkEvents.lua" />
+        <sourceFile filename="src/RANSettingsIntegration.lua" />
         <sourceFile filename="src/RealisticAnimalNames.lua" />
         <sourceFile filename="gui/AnimalNamesDialog.lua" />
     </extraSourceFiles>
