@@ -49,38 +49,44 @@ All names are saved per savegame and sync across all players in multiplayer.]]><
 
     <!-- Settings integrated with game settings menu -->
     <settings>
-        <setting name="ran_showNames" 
-                 title="ran_setting_showNames" 
-                 type="bool" 
+        <setting name="ran_showNames"
+                 title="ran_setting_showNames"
+                 type="checkbox"
                  default="true" />
-        
-        <setting name="ran_nameDistance" 
-                 title="ran_setting_nameDistance" 
-                 type="float" 
-                 default="15" 
-                 min="5" 
-                 max="50" />
-        
-        <setting name="ran_nameHeight" 
-                 title="ran_setting_nameHeight" 
-                 type="float" 
-                 default="1.8" 
-                 min="0.5" 
-                 max="3.0" />
-        
-        <setting name="ran_fontSize" 
-                 title="ran_setting_fontSize" 
-                 type="float" 
-                 default="0.018" 
-                 min="0.010" 
-                 max="0.030" />
+
+        <setting name="ran_showDetails"
+                 title="ran_setting_showDetails"
+                 type="checkbox"
+                 default="true" />
+
+        <setting name="ran_nameDistance"
+                 title="ran_setting_nameDistance"
+                 type="slider"
+                 default="15"
+                 min="5"
+                 max="50"
+                 step="1" />
+
+        <setting name="ran_nameHeight"
+                 title="ran_setting_nameHeight"
+                 type="slider"
+                 default="1.8"
+                 min="0.5"
+                 max="3.0"
+                 step="0.1" />
+
+        <setting name="ran_fontSize"
+                 title="ran_setting_fontSize"
+                 type="slider"
+                 default="0.018"
+                 min="0.010"
+                 max="0.030"
+                 step="0.002" />
     </settings>
 
     <!-- Input Actions -->
     <actions>
-        <action name="RAN_OPEN_UI" 
-                category="VEHICLE" 
-                axisType="HALF" />
+        <action name="RAN_OPEN_UI" />
     </actions>
 
     <!-- Default Keybindings -->
@@ -155,6 +161,70 @@ All names are saved per savegame and sync across all players in multiplayer.]]><
             <hu>Betűméret</hu>
             <nl>Lettergrootte</nl>
             <ro>Mărimea fontului</ro>
+        </text>
+
+        <text name="ran_setting_showDetails">
+            <en>Show Animal Details (Type &amp; Age)</en>
+            <de>Tierdetails anzeigen (Typ &amp; Alter)</de>
+            <fr>Afficher les détails (Type et Âge)</fr>
+            <pl>Pokaż szczegóły zwierząt (typ i wiek)</pl>
+            <es>Mostrar detalles del animal (tipo y edad)</es>
+            <it>Mostra dettagli animale (tipo ed età)</it>
+            <cz>Zobrazit detaily zvířat (typ a věk)</cz>
+            <br>Mostrar detalhes do animal (tipo e idade)</br>
+            <uk>Показати деталі тварини (тип і вік)</uk>
+            <ru>Показывать детали животного (тип и возраст)</ru>
+            <hu>Állat részletek mutatása (típus és kor)</hu>
+            <nl>Dierdetails weergeven (type en leeftijd)</nl>
+            <ro>Afișează detaliile animalului (tip și vârstă)</ro>
+        </text>
+
+        <text name="ran_age_newborn">
+            <en>Newborn</en>
+            <de>Neugeboren</de>
+            <fr>Nouveau-né</fr>
+            <pl>Noworodek</pl>
+            <es>Recién nacido</es>
+            <it>Neonato</it>
+            <cz>Novorozenec</cz>
+            <br>Recém-nascido</br>
+            <uk>Новонароджений</uk>
+            <ru>Новорождённый</ru>
+            <hu>Újszülött</hu>
+            <nl>Pasgeboren</nl>
+            <ro>Nou-născut</ro>
+        </text>
+
+        <text name="ran_age_months_fmt">
+            <en>%d mo</en>
+            <de>%d Mo.</de>
+            <fr>%d mo</fr>
+            <pl>%d mies.</pl>
+            <es>%d mes</es>
+            <it>%d mes</it>
+            <cz>%d měs.</cz>
+            <br>%d mês</br>
+            <uk>%d міс.</uk>
+            <ru>%d мес.</ru>
+            <hu>%d hó</hu>
+            <nl>%d mnd</nl>
+            <ro>%d luni</ro>
+        </text>
+
+        <text name="ran_age_years_fmt">
+            <en>%d yr</en>
+            <de>%d J.</de>
+            <fr>%d an</fr>
+            <pl>%d rok</pl>
+            <es>%d año</es>
+            <it>%d anno</it>
+            <cz>%d rok</cz>
+            <br>%d ano</br>
+            <uk>%d рік</uk>
+            <ru>%d г.</ru>
+            <hu>%d év</hu>
+            <nl>%d jr</nl>
+            <ro>%d ani</ro>
         </text>
 
         <!-- UI Elements -->
@@ -335,6 +405,23 @@ All names are saved per savegame and sync across all players in multiplayer.]]><
             <ro>Toate numele animalelor au fost șterse</ro>
         </text>
 
+        <!-- Settings section header -->
+        <text name="ran_setting_section">
+            <en>Realistic Animal Names</en>
+            <de>Realistische Tiernamen</de>
+            <fr>Noms d'Animaux Réalistes</fr>
+            <pl>Realistyczne Nazwy Zwierząt</pl>
+            <es>Nombres Realistas para Animales</es>
+            <it>Nomi Animali Realistici</it>
+            <cz>Realistická Jména Zvířat</cz>
+            <br>Nomes Realistas de Animais</br>
+            <uk>Реалістичні Імена Тварин</uk>
+            <ru>Реалистичные Имена Животных</ru>
+            <hu>Realista Állatnevek</hu>
+            <nl>Realistische Dierennamen</nl>
+            <ro>Nume Realiste pentru Animale</ro>
+        </text>
+
         <!-- Input Action -->
         <text name="input_RAN_OPEN_UI">
             <en>Open Animal Naming UI</en>
@@ -355,6 +442,8 @@ All names are saved per savegame and sync across all players in multiplayer.]]><
 
     <!-- Source Files -->
     <extraSourceFiles>
+        <sourceFile filename="src/events/RANNetworkEvents.lua" />
+        <sourceFile filename="src/RANSettingsIntegration.lua" />
         <sourceFile filename="src/RealisticAnimalNames.lua" />
         <sourceFile filename="gui/AnimalNamesDialog.lua" />
     </extraSourceFiles>
