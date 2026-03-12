@@ -877,8 +877,8 @@ local function unregisterMod()
     print("[RAN] Unregistered")
 end
 
-FSBaseMission.onMissionLoaded = Utils.appendedFunction(
-    FSBaseMission.onMissionLoaded,
+Mission00.loadMission00Finished = Utils.appendedFunction(
+    Mission00.loadMission00Finished,
     function(mission) registerMod(mission) end)
 
 FSBaseMission.delete = Utils.appendedFunction(
