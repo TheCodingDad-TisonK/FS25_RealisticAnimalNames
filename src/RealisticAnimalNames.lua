@@ -37,7 +37,7 @@ function RealisticAnimalNames:new(mission, modDirectory, modName)
     -- Multiplayer state
     self.isServer      = mission:getIsServer()
     self.isClient      = mission:getIsClient()
-    self.isMultiplayer = mission:getIsMultiplayer()
+    self.isMultiplayer = (g_currentMission.missionDynamicInfo ~= nil and g_currentMission.missionDynamicInfo.isMultiplayer == true)
 
     -- Data storage
     self.animalNames = {}   -- "farmId_animalId" → name string
