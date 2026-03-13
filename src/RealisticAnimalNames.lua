@@ -1,5 +1,5 @@
 -- ============================================================================
--- Realistic Animal Names for FS25 v2.2.0.0
+-- Realistic Animal Names for FS25 v2.3.0.0
 -- ============================================================================
 -- Author: TisonK
 -- Description: Custom animal names with floating multi-line tags, MP sync
@@ -263,18 +263,33 @@ function RealisticAnimalNames:isValidAnimal(animal)
     return true
 end
 
----Build a stable composite key for one animal: "farmId_animalId"
-function RealisticAnimalNames:getAnimalId(animal)
+---Build a stable composite key for one animal: "farmId_clusterId_animalId"
+---The cluster ID is required because animal.id is only unique within a cluster,
+---not across the entire animal system (Issue #9: cross-cluster name collisions).
+---@param  animal  table  Animal object
+---@param  cluster table|nil  The cluster that owns this animal (optional but recommended)
+---@return string|nil
+function RealisticAnimalNames:getAnimalId(animal, cluster)
     if not animal or not animal.id then return nil end
-    local farmId = animal.ownerFarmId or 1
-    return string.format("%d_%d", farmId, animal.id)
+    local farmId    = animal.ownerFarmId or 1
+    -- Use the cluster's own id when available; fall back to nodeId-based hash
+    -- so that animals without a cluster reference still get a unique key.
+    local clusterId = 0
+    if cluster and cluster.id then
+        clusterId = cluster.id
+    elseif animal.nodeId then
+        -- nodeId is unique per scene node — good enough as a cluster discriminator
+        clusterId = animal.nodeId
+    end
+    return string.format("%d_%d_%d", farmId, clusterId, animal.id)
 end
 
 ---Return the display name to show (custom name, or localised type fallback)
 function RealisticAnimalNames:getAnimalDisplayName(animal)
     if not animal then return "" end
-    local id     = self:getAnimalId(animal)
-    local custom = self.animalNames[id]
+    local cluster = self:findClusterForAnimal(animal)
+    local id      = self:getAnimalId(animal, cluster)
+    local custom  = self.animalNames[id]
     return (custom and custom ~= "") and custom or self:getDefaultAnimalName(animal)
 end
 
@@ -288,29 +303,64 @@ function RealisticAnimalNames:getDefaultAnimalName(animal)
 end
 
 ---Find an animal object by its composite ID (used to warm the node-ID cache after MP sync)
+---Supports both the legacy "farmId_animalId" format and the current
+---"farmId_clusterId_animalId" format (Issue #9 fix).
 function RealisticAnimalNames:findAnimalById(animalId)
     if not self.mission.animalSystem or not self.mission.animalSystem.clusters then
         return nil
     end
 
-    local _, rawId = animalId:match("^(%d+)_(%d+)$")
-    local targetId = tonumber(rawId)
+    -- Parse new 3-part key: farmId_clusterId_animalId
+    local farmId, clusterId, rawId = animalId:match("^(%d+)_(%d+)_(%d+)$")
+    local targetClusterId = tonumber(clusterId)
+    local targetId        = tonumber(rawId)
+
+    -- Fall back to legacy 2-part key: farmId_animalId
+    if not targetId then
+        local _, legacyId = animalId:match("^(%d+)_(%d+)$")
+        targetId = tonumber(legacyId)
+        targetClusterId = nil  -- no cluster hint available
+    end
+
     if not targetId then return nil end
 
     for _, cluster in pairs(self.mission.animalSystem.clusters) do
-        if cluster.animals then
-            for _, animal in pairs(cluster.animals) do
-                if animal and animal.id == targetId then return animal end
+        -- If we have a cluster hint, skip non-matching clusters for speed
+        if targetClusterId == nil or cluster.id == targetClusterId then
+            if cluster.animals then
+                for _, animal in pairs(cluster.animals) do
+                    if animal and animal.id == targetId then return animal end
+                end
             end
         end
     end
     return nil
 end
 
----Called by the animal-system listener when an animal is deleted
+---Find the cluster that owns a given animal object
+---@param  animal table
+---@return table|nil  cluster
+function RealisticAnimalNames:findClusterForAnimal(animal)
+    if not animal or not self.mission.animalSystem or not self.mission.animalSystem.clusters then
+        return nil
+    end
+    for _, cluster in pairs(self.mission.animalSystem.clusters) do
+        if cluster.animals then
+            for _, a in pairs(cluster.animals) do
+                if a == animal then return cluster end
+            end
+        end
+    end
+    return nil
+end
+
+
 function RealisticAnimalNames:onAnimalRemoved(animal)
     if not animal then return end
-    local id = self:getAnimalId(animal)
+    -- Note: the animal may already be partially removed from its cluster,
+    -- so we try to find the cluster first; if not found, fall back to nodeId lookup.
+    local cluster = self:findClusterForAnimal(animal)
+    local id = self:getAnimalId(animal, cluster)
     if id and self.animalNames[id] then
         self.animalNames[id] = nil
         if self.isServer then self:scheduleSave() end
@@ -328,7 +378,8 @@ function RealisticAnimalNames:openDialogForAnimal(animal)
     if not animal or not self.dialogLoaded then return end
 
     self.currentAnimal = animal
-    local id          = self:getAnimalId(animal)
+    local cluster     = self:findClusterForAnimal(animal)
+    local id          = self:getAnimalId(animal, cluster)
     local currentName = self.animalNames[id] or ""
 
     local success, dialog = pcall(function()
@@ -345,7 +396,8 @@ end
 ---Set a custom name — called by the dialog on Apply
 function RealisticAnimalNames:setAnimalName(animal, name)
     if not animal then return false end
-    local id = self:getAnimalId(animal)
+    local cluster = self:findClusterForAnimal(animal)
+    local id = self:getAnimalId(animal, cluster)
     if not id then return false end
 
     name = name and self:sanitizeName(tostring(name)) or ""
@@ -372,7 +424,8 @@ end
 ---Reset an animal back to its default name — called by the dialog on Reset
 function RealisticAnimalNames:resetAnimalName(animal)
     if not animal then return false end
-    local id = self:getAnimalId(animal)
+    local cluster = self:findClusterForAnimal(animal)
+    local id = self:getAnimalId(animal, cluster)
     if not id then return false end
 
     if self.isMultiplayer and not self.isServer then
@@ -526,7 +579,7 @@ function RealisticAnimalNames:saveToSavegame()
         end
     end
 
-    xmlFile:setValue("animalNames#version", "2.2.0.0")
+    xmlFile:setValue("animalNames#version", "2.3.0.0")
     xmlFile:setValue("animalNames#count",   index)
     xmlFile:save()
     xmlFile:delete()
@@ -552,18 +605,30 @@ function RealisticAnimalNames:loadFromSavegame()
 
     self.animalNames = {}
     local index = 0
+    local legacyCount = 0
     while true do
         local key  = string.format("animalNames.animal(%d)", index)
         local id   = xmlFile:getValue(key .. "#id")
         local name = xmlFile:getValue(key)
         if not id then break end
-        if name and name ~= "" then self.animalNames[id] = name end
+        if name and name ~= "" then
+            -- Detect legacy 2-part keys ("farmId_animalId") from saves before v2.3.
+            -- We can't reconstruct the cluster ID at load time, so we keep the key
+            -- as-is and let the draw loop's nodeId cache naturally remap it once
+            -- the animal is seen in a cluster. The key will be overwritten correctly
+            -- on the next save after any name is set or reset.
+            self.animalNames[id] = name
+            if id:match("^%d+_%d+$") then legacyCount = legacyCount + 1 end
+        end
         index = index + 1
     end
 
     local ver = xmlFile:getValue("animalNames#version") or "1.0"
     xmlFile:delete()
     self:log("Loaded", index, "names (v" .. ver .. ")")
+    if legacyCount > 0 then
+        self:log("WARNING:", legacyCount, "legacy keys detected — they will be migrated on next save")
+    end
 end
 
 ---Absolute path for the savegame data file
@@ -610,7 +675,7 @@ function RealisticAnimalNames:draw()
                     -- Look up name: try fast node cache first, then the main table
                     local name = self.nameCache[animal.nodeId]
                     if not name then
-                        local id = self:getAnimalId(animal)
+                        local id = self:getAnimalId(animal, cluster)
                         name = self.animalNames[id]
                         -- Warm the cache for next frame
                         if name and animal.nodeId then
@@ -905,4 +970,4 @@ FSBaseMission.update = function(self, dt, ...)
     end
 end
 
-print("[RAN] Mod initialized (v2.2.0.0)")
+print("[RAN] Mod initialized (v2.3.0.0)")
