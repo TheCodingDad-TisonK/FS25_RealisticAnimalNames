@@ -1,6 +1,6 @@
 
 -- ============================================================================
--- Realistic Animal Names - Settings Integration v2.2.0.0
+-- Realistic Animal Names - Settings Integration v2.3.0.0
 -- Injects mod settings into ESC > Settings > Game Settings
 -- Pattern: NPCFavor NPCSettingsIntegration (proven FS25 approach)
 -- ============================================================================

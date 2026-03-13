@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git commit:*)",
+      "Bash(find \"C:\\\\Users\\\\tison\\\\Desktop\\\\FS25 MODS\\\\FS25-lua-scripting\" -type f -name \"*.lua\" | xargs grep -l \"animal\" | head -10)",
+      "Bash(find \"C:\\\\Users\\\\tison\\\\Desktop\\\\FS25 MODS\\\\FS25-Community-LUADOC\" -type f -name \"*.md\" | xargs grep -l \"AnimalCluster\\\\|Animal.*age\\\\|AnimalType\")",
+      "Bash(find \"/c/Users/tison/Desktop/FS25 MODS/FS25-Community-LUADOC\" -name \"*.md\" -type f | xargs grep -l \"cluster\\\\|Cluster\" | head -10)",
+      "Skill(fs25-deploy)",
+      "Bash(cd \"C:/Users/tison/Desktop/FS25 MODS/FS25_RealisticAnimalNames\" && gh issue view 7)",
+      "Skill(fs25-log)",
+      "Bash(grep -r \"isRunning\" \"/c/Users/tison/Desktop/FS25 MODS/FS25_*\" --include=\"*.lua\" 2>/dev/null | grep -i job | head -10)",
+      "Bash(grep -r \"getActiveJobs\\\\|g_currentMission.aiSystem\" \"/c/Users/tison/Desktop/FS25 MODS/FS25_*\" --include=\"*.lua\" 2>/dev/null | head -15)",
+      "Bash(cd \"/c/Users/tison/Desktop/FS25 MODS/FS25_WorkerCosts\" && bash build.sh --deploy 2>&1)",
+      "Bash(find \"/c/Users/tison/Desktop/FS25 MODS/FS25-Community-LUADOC\" -name \"*.md\" | xargs grep -l \"gameSettings\\\\|modSettings\" 2>/dev/null | head -5)",
+      "Bash(find \"/c/Users/tison/Desktop/FS25 MODS/FS25_NPCFavor\" -type f \\\\\\( -name \"*settings*\" -o -name \"*Settings*\" -o -name \"*menu*\" -o -name \"*Menu*\" \\\\\\) | grep -i \"\\\\.lua$\")",
+      "Bash(gh issue:*)",
+      "Bash(gh pr:*)"
+    ]
+  }
+}
